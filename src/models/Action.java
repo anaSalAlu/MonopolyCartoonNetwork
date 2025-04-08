@@ -1,5 +1,8 @@
 package models;
 
+/**
+ * @author Ana
+ */
 public class Action {
 
 	public int idAction;
