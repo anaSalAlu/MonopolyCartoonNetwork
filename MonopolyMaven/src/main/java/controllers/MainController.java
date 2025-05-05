@@ -1,9 +1,12 @@
+
 package controllers;
 
 import java.io.IOException;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
@@ -11,9 +14,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
-/**
- * @author Ana
- */
 public class MainController {
 
 	@FXML
@@ -49,17 +49,50 @@ public class MainController {
 	}
 
 	@FXML
-	public void gameMenu() {
+	void gameMenu(ActionEvent event) {
+		try {
+			Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
 
+			if (event.getSource() == btnNewGame) {
+				// Nueva partida
+				FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/GameView.fxml"));
+				Parent root = loader.load();
+
+				// Pasar el parámetro al GameController
+				GameController controller = loader.getController();
+				controller.setNewGame(true);
+
+				stage.setScene(new Scene(root));
+				stage.show();
+			} else if (event.getSource() == btnContinueGame) {
+
+				FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/SavedGamesView.fxml"));
+				Parent root = loader.load();
+
+				stage.setScene(new Scene(root));
+				stage.show();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@FXML
-	public void profileMenu() {
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("ListProfilesView.fxml"));
+	void goToProfile(ActionEvent event) {
 		try {
-			AnchorPane secondView = loader.load();
-			Stage stage = (Stage) mainLayout.getScene().getWindow();
-			stage.setScene(new Scene(secondView));
+			// Obtener el Stage actual
+			Stage stage = (Stage) btnProfiles.getScene().getWindow();
+
+			// Almacenar la escena actual en una variable estática
+			ProfileController.previousScene = stage.getScene();
+
+			// Cargar la vista del ProfileController
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ProfileView.fxml"));
+			Parent root = loader.load();
+
+			// Cambiar a la nueva escena
+			stage.setScene(new Scene(root));
+			stage.show();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

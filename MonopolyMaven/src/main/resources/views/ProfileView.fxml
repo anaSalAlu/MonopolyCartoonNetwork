@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 
-
-<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/22" fx:controller="controllers.ProfileController">
+<BorderPane xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ProfileController">
    <center>
-      <AnchorPane maxHeight="600.0" maxWidth="800.0" minHeight="600.0" minWidth="800.0" prefHeight="600.0" prefWidth="800.0" BorderPane.alignment="CENTER" />
+      <AnchorPane maxHeight="600.0" maxWidth="800.0" minHeight="600.0" minWidth="800.0" prefHeight="600.0" prefWidth="800.0" BorderPane.alignment="CENTER">
+         <children>
+            <ImageView fx:id="player_image" fitHeight="255.0" fitWidth="227.0" layoutX="36.0" layoutY="53.0" pickOnBounds="true" preserveRatio="true" />
+            <TextArea fx:id="name_text_area" layoutX="300.0" layoutY="53.0" minHeight="-Infinity" prefHeight="20.0" prefWidth="200.0" />
+            <Button fx:id="save_button" layoutX="300.0" layoutY="374.0" mnemonicParsing="false" prefHeight="24.0" prefWidth="201.0" text="Save" />
+            <Button fx:id="edit_name_nutton" layoutX="512.0" layoutY="67.0" mnemonicParsing="false" text="Edit" />
+            <Button fx:id="edit_image_button" layoutX="119.0" layoutY="316.0" mnemonicParsing="false" text="Edit" />
+            <ScrollPane layoutX="300.0" layoutY="106.0" prefHeight="150.0" prefWidth="200.0">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="150.0" prefWidth="200.0" />
+              </content>
+            </ScrollPane>
+            <Button fx:id="goBackButton" layoutX="700.0" layoutY="560.0" mnemonicParsing="false" onAction="#goBack" text="Go back" />
+         </children></AnchorPane>
    </center>
 </BorderPane>
