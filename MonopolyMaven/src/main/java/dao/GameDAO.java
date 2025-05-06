@@ -2,7 +2,10 @@ package dao;
 
 import java.util.List;
 
+import models.Board;
 import models.Game;
+import models.Player;
+import models.Property;
 
 /**
  * @author Ana
@@ -24,5 +27,11 @@ public interface GameDAO {
 
 	/* Read All */
 	public List<Game> getAll();
+
+	public List<Player> loadPlayers();
+
+	public List<Property> loadProperties();
+
+	public Board loadBoards();
 
 }

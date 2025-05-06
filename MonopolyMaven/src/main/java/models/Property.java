@@ -8,6 +8,7 @@ import java.util.List;
 public class Property {
 
 	public int idProperty;
+	public String name;
 	public Cell cell;
 	public int sellValue;
 	public int buyValue;
@@ -101,5 +102,13 @@ public class Property {
 
 	public void setRentBaseValue(int rentBaseValue) {
 		this.rentBaseValue = rentBaseValue;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 }
