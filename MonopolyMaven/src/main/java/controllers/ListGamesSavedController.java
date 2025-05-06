@@ -2,43 +2,31 @@ package controllers;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import models.Game;
 
 public class ListGamesSavedController {
-	@FXML
-	private AnchorPane listGamesLayout;
+
 	@FXML
 	private Button goBackButton;
 
 	@FXML
-	private ListView<Game> listProfiles;
-	static Scene previousScene;
+	public void goBack(ActionEvent event) {
+		try {
+			// Load the GameController view
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
+			Parent root = loader.load();
 
-	@FXML
-	private void initialize() {
-
+			// Get the current stage and set the new scene
+			Stage stage = (Stage) goBackButton.getScene().getWindow();
+			stage.setScene(new Scene(root));
+			stage.show();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
-
-
-@FXML
-public void goBack(ActionEvent event) {
-    try {
-        // Verifica si la escena anterior está configurada
-        if (previousScene != null) {
-            Stage stage = (Stage) goBackButton.getScene().getWindow();
-            stage.setScene(previousScene); // Cambia a la escena anterior
-            stage.show();
-        } else {
-            System.out.println("No previous scene set.");
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
 
 }
