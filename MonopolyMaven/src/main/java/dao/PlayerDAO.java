@@ -27,4 +27,6 @@ public interface PlayerDAO {
 
 	public List<Player> cargarJugadores();
 
+	public void updatePlayerFicha(Player jugador1);
+
 }

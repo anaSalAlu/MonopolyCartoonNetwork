@@ -8,8 +8,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import models.Board;
 import models.Game;
 import models.Game.State;
+import models.Player;
+import models.Property;
 
 /**
  * @author Ana
@@ -107,6 +110,27 @@ public class GameDAOSQLITE implements GameDAO {
 			e.printStackTrace();
 		}
 		return games;
+	}
+
+	@Override
+	public List<Player> loadPlayers() {
+		// Implementación de ejemplo: reemplaza con la lógica real de la base de datos
+		List<Player> players = new ArrayList<>();
+		// Agrega lógica para obtener jugadores desde la base de datos
+		System.out.println("Cargando jugadores desde la base de datos...");
+		return players;
+	}
+
+	@Override
+	public List<Property> loadProperties() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Board loadBoards() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

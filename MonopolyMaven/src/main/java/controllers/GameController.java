@@ -2,14 +2,13 @@
 package controllers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import dao.GameDAO;
 import dao.GameDAOSQLITE;
 import dao.PlayerDAO;
 import dao.PlayerDAOSQLITE;
-import dao.PropertyDAO;
-import dao.PropertyDAOSQLITE;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -18,6 +17,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
@@ -42,7 +42,7 @@ public class GameController {
 	private ImageView player2_icon;
 	@FXML
 	private Text player2_name;
-
+	@FXML
 	private ImageView player3_icon;
 	@FXML
 	private Text player3_name;
@@ -52,7 +52,7 @@ public class GameController {
 	@FXML
 	private Text player4_name;
 
-	private boolean isNewGame;
+	private boolean isNewGame = false;;
 	private Player jugadorActual;
 	private Property propiedadSeleccionada;
 
@@ -64,6 +64,16 @@ public class GameController {
 	private List<Card> luckyCards;
 	private List<Card> propertyCards;
 	private List<Card> chestLuckyCards;
+	@FXML
+	private ImageView fichaJugador1;
+	@FXML
+	private ImageView fichaJugador2;
+
+	private Player jugador1;
+	private Player jugador2;
+
+	private String fichaSeleccionadaJugador1;
+	private String fichaSeleccionadaJugador2;
 
 	public void setNewGame(boolean isNewGame) {
 		this.isNewGame = isNewGame;
@@ -117,26 +127,61 @@ public class GameController {
 
 	// TODO
 	private void inicializarNuevaPartida() {
-		PlayerDAO jugadorDAO = new PlayerDAOSQLITE();
-		PropertyDAO propiedadDAO = new PropertyDAOSQLITE();
 
-		this.players = jugadorDAO.cargarJugadores();
-		this.properties = propiedadDAO.cargarPropiedades();
-		this.board = new Board(0, null, 0);
-		this.cards = loadCards();
-		this.chestCards = loadChestCards();
-		this.luckyCards = loadLuckyCards();
-		this.propertyCards = loadPropertiesCards();
-		this.chestLuckyCards = loadLuckyChestCards();
+		try {
+			// Load ProfileView for Player 1
+			FXMLLoader loader1 = new FXMLLoader(getClass().getResource("/views/ProfileView.fxml"));
+			Parent root1 = loader1.load();
+			ProfileController profileController1 = loader1.getController();
 
-		System.out.println("Jugadores: " + players);
-		System.out.println("Propiedades: " + properties);
-		System.out.println("Tablero: " + board);
-		System.out.println("Cartas: " + cards);
-		System.out.println("Cartas Cofre: " + chestCards);
-		System.out.println("Cartas Suerte: " + luckyCards);
-		System.out.println("Cartas Propiedad: " + propertyCards);
-		System.out.println("Cartas Cofre y Suerte: " + chestLuckyCards);
+			Stage stage1 = new Stage();
+			stage1.setTitle("Jugador 1 - Crear Perfil");
+			stage1.setScene(new Scene(root1));
+			stage1.showAndWait();
+
+			// Retrieve Player 1 data
+			TextArea nombreJugador1 = profileController1.getName_text_area();
+			Image ImagenJugador1 = profileController1.getPlayer_image();
+
+			// Load ProfileView for Player 2
+			FXMLLoader loader2 = new FXMLLoader(getClass().getResource("/views/ProfileView.fxml"));
+			Parent root2 = loader2.load();
+			ProfileController profileController2 = loader2.getController();
+
+			Stage stage2 = new Stage();
+			stage2.setTitle("Jugador 2 - Crear Perfil");
+			stage2.setScene(new Scene(root2));
+			stage2.showAndWait();
+
+			// Retrieve Player 2 data
+			TextArea nombreJugador2 = profileController2.getName_text_area();
+			Image ImagenJugador2 = profileController2.getPlayer_image();
+
+			// Create Player Profiles
+			PlayerDAO playerDAO = new PlayerDAOSQLITE();
+			jugador1 = new Player(nombreJugador1, ImagenJugador1);
+			jugador2 = new Player(nombreJugador2, ImagenJugador2);
+
+			playerDAO.addPlayer(jugador1);
+			playerDAO.addPlayer(jugador2);
+
+			System.out.println("Player profiles created and saved in the database.");
+
+			// Allow players to select their tokens
+			seleccionarFichaJugador1("/fichas/ficha1.png"); // Example path
+			seleccionarFichaJugador2("/fichas/ficha2.png"); // Example path
+
+			// Save selected tokens in the database
+			jugador1.setFichaSeleccionadaJugador1(fichaSeleccionadaJugador1);
+			jugador2.setFichaSeleccionadaJugador2(fichaSeleccionadaJugador2);
+
+			playerDAO.updatePlayerFicha(jugador1);
+			playerDAO.updatePlayerFicha(jugador2);
+
+			System.out.println("Tokens selected and saved in the database.");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// TODO
@@ -150,27 +195,23 @@ public class GameController {
 	// TODO
 	// Métodos de carga de cartas (simulados)
 	private List<Card> loadCards() {
-		return null;
+		return new ArrayList<>(); // Placeholder implementation
 	}
 
-	// TODO
 	private List<Card> loadChestCards() {
-		return null;
+		return new ArrayList<>(); // Placeholder implementation
 	}
 
-	// TODO
 	private List<Card> loadLuckyCards() {
-		return null;
+		return new ArrayList<>(); // Placeholder implementation
 	}
 
-	// TODO
 	private List<Card> loadPropertiesCards() {
-		return null;
+		return new ArrayList<>(); // Placeholder implementation
 	}
 
-	// TODO
 	private List<Card> loadLuckyChestCards() {
-		return null;
+		return new ArrayList<>(); // Placeholder implementation
 	}
 
 	// --- FUNCIONALIDADES DE JUEGO ---
@@ -230,5 +271,19 @@ public class GameController {
 	// TODO
 	public void mostrarCartaCofreSuerte() {
 		System.out.println("Mostrando carta de cofre o suerte...");
+	}
+
+	@FXML
+	public void seleccionarFichaJugador1(String rutaFicha) {
+		fichaSeleccionadaJugador1 = rutaFicha;
+		fichaJugador1.setImage(new javafx.scene.image.Image(rutaFicha));
+		System.out.println("Token selected for Player 1: " + rutaFicha);
+	}
+
+	@FXML
+	public void seleccionarFichaJugador2(String rutaFicha) {
+		fichaSeleccionadaJugador2 = rutaFicha;
+		fichaJugador2.setImage(new javafx.scene.image.Image(rutaFicha));
+		System.out.println("Token selected for Player 2: " + rutaFicha);
 	}
 }
