@@ -11,7 +11,6 @@ import java.util.List;
 import models.Card;
 import models.Cell;
 import models.Cell.CellType;
-import models.Player;
 import models.Property;
 
 /**
@@ -21,15 +20,14 @@ public class CellDAOSQLITE implements CellDAO {
 
 	@Override
 	public void addCell(Cell cell) {
-		String sql = "INSERT INTO Cell(id_cell, type, owner_id, card_id, property_id) VALUES (?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO Cell(id_cell, type, card_id, property_id) VALUES (?, ?, ?, ?)";
 		try {
 			Connection conn = ManagerConnection.obtenirConnexio();
 			PreparedStatement statement = conn.prepareStatement(sql);
 			statement.setInt(1, cell.getIdCell());
 			statement.setString(2, cell.getType().name());
-			statement.setInt(3, cell.getOwner().getIdPlayer());
-			statement.setInt(4, cell.getCard().getIdCard());
-			statement.setInt(5, cell.getProperty().getIdProperty());
+			statement.setInt(3, cell.getCard().getIdCard());
+			statement.setInt(4, cell.getProperty().getIdProperty());
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
@@ -49,22 +47,18 @@ public class CellDAOSQLITE implements CellDAO {
 			if (resultSet.next()) {
 				int cellId = resultSet.getInt("id_cell");
 				String typeString = resultSet.getString("type");
-				int ownerId = resultSet.getInt("owner_id");
 				int cardId = resultSet.getInt("card_id");
 				int propertyId = resultSet.getInt("property_id");
 
 				DAOManager daoManager = new DAOManager();
-				PlayerDAO playerDAO = daoManager.getPlayerDAO();
-				Player player = playerDAO.findPlayerById(ownerId);
-
 				CardDAO cardDAO = daoManager.getCardDAO();
 				Card card = cardDAO.findCardById(cardId);
 
 				PropertyDAO propertyDAO = daoManager.getPropertyDAO();
 				Property property = propertyDAO.findPropertyById(propertyId);
 
-				if (player != null || card != null || property != null) {
-					return new Cell(cellId, CellType.valueOf(typeString), player, card, property);
+				if (card != null || property != null) {
+					return new Cell(cellId, CellType.valueOf(typeString), card, property);
 				}
 
 			}
@@ -76,15 +70,14 @@ public class CellDAOSQLITE implements CellDAO {
 
 	@Override
 	public void updateCell(Cell cell) {
-		String sql = "UPDATE Cell SET type = ?, owner_id = ?, card_id = ?, property_id = ? WHERE id_cell = ?";
+		String sql = "UPDATE Cell SET type = ?, card_id = ?, property_id = ? WHERE id_cell = ?";
 		try {
 			Connection conn = ManagerConnection.obtenirConnexio();
 			PreparedStatement statement = conn.prepareStatement(sql);
 			statement.setString(1, cell.getType().name());
-			statement.setInt(2, cell.getOwner().getIdPlayer());
-			statement.setInt(3, cell.getCard().getIdCard());
-			statement.setInt(4, cell.getProperty().getIdProperty());
-			statement.setInt(5, cell.getIdCell());
+			statement.setInt(2, cell.getCard().getIdCard());
+			statement.setInt(3, cell.getProperty().getIdProperty());
+			statement.setInt(4, cell.getIdCell());
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
@@ -116,23 +109,20 @@ public class CellDAOSQLITE implements CellDAO {
 			Statement statement = conn.createStatement();
 			ResultSet resultSet = statement.executeQuery(sql);
 			DAOManager daoManager = new DAOManager();
-			PlayerDAO playerDAO = daoManager.getPlayerDAO();
 			CardDAO cardDAO = daoManager.getCardDAO();
 			PropertyDAO propertyDAO = daoManager.getPropertyDAO();
 
 			while (resultSet.next()) {
 				int cellId = resultSet.getInt("id_cell");
 				String typeString = resultSet.getString("type");
-				int ownerId = resultSet.getInt("owner_id");
 				int cardId = resultSet.getInt("card_id");
 				int propertyId = resultSet.getInt("property_id");
 
-				Player player = playerDAO.findPlayerById(ownerId);
 				Card card = cardDAO.findCardById(cardId);
 				Property property = propertyDAO.findPropertyById(propertyId);
 
-				if (player != null || card != null || property != null) {
-					Cell cell = new Cell(cellId, CellType.valueOf(typeString), player, card, property);
+				if (card != null || property != null) {
+					Cell cell = new Cell(cellId, CellType.valueOf(typeString), card, property);
 					cells.add(cell);
 				}
 			}

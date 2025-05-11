@@ -53,5 +53,45 @@
 			<attribute name="test" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/andy2/.m2/repository/org/openjfx/javafx-fxml/21.0.5/javafx-fxml-21.0.5-win.jar" sourcepath="C:/Users/andy2/.m2/repository/org/openjfx/javafx-fxml/21.0.5/javafx-fxml-21.0.5-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="org.openjfx"/>
+			<attribute name="maven.artifactId" value="javafx-fxml"/>
+			<attribute name="maven.version" value="21.0.5"/>
+			<attribute name="maven.classifier" value="win"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="/m9"/>
+	<classpathentry kind="lib" path="C:/Users/andy2/.m2/repository/com/itextpdf/html2pdf/4.0.0/html2pdf-4.0.0.jar" sourcepath="C:/Users/andy2/.m2/repository/com/itextpdf/html2pdf/4.0.0/html2pdf-4.0.0-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="com.itextpdf"/>
+			<attribute name="maven.artifactId" value="html2pdf"/>
+			<attribute name="maven.version" value="4.0.0"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/andy2/.m2/repository/org/openjfx/javafx-controls/21.0.5/javafx-controls-21.0.5-win.jar" sourcepath="C:/Users/andy2/.m2/repository/org/openjfx/javafx-controls/21.0.5/javafx-controls-21.0.5-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="org.openjfx"/>
+			<attribute name="maven.artifactId" value="javafx-controls"/>
+			<attribute name="maven.version" value="21.0.5"/>
+			<attribute name="maven.classifier" value="win"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/andy2/.m2/repository/org/openjfx/javafx-graphics/21.0.5/javafx-graphics-21.0.5-win.jar" sourcepath="C:/Users/andy2/.m2/repository/org/openjfx/javafx-graphics/21.0.5/javafx-graphics-21.0.5-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="org.openjfx"/>
+			<attribute name="maven.artifactId" value="javafx-graphics"/>
+			<attribute name="maven.version" value="21.0.5"/>
+			<attribute name="maven.classifier" value="win"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

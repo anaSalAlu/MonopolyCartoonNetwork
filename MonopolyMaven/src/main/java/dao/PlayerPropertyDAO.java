@@ -3,7 +3,6 @@ package dao;
 import java.util.List;
 
 import models.PlayerProperty;
-import models.Property;
 
 /**
  * @author Ana
@@ -14,16 +13,13 @@ public interface PlayerPropertyDAO {
 	/* Create */
 	public void addPlayerProperty(PlayerProperty playerProperty);
 
-	/* Read */
-	public Property findPlayerPropertyById(int id);
-
 	/* Update */
 	public void updatePlayerProperty(PlayerProperty playerProperty);
 
 	/* Delete */
-	public void deletePlayerProperty(int id);
+	public void deletePlayerProperty(int playerId, int propertyId, int gameId);
 
 	/* Read All */
-	public List<PlayerProperty> getAll();
+	public List<PlayerProperty> findPlayerPropertiesByPlayerAndGame(int playerId, int gameId);
 
 }

@@ -15,11 +15,11 @@ public class Property {
 	public int houseBuyValue;
 	public int hotelBuyValue;
 	public int rentHotelValue;
-	public List<Integer> rentHouseValue;
+	public List<RentHouseValue> rentHouseValue;
 	public int rentBaseValue;
 
 	public Property(int idProperty, Cell cell, int sellValue, int buyValue, int houseBuyValue, int hotelBuyValue,
-			int rentHotelValue, List<Integer> rentHouseValue, int rentBaseValue) {
+			int rentHotelValue, List<RentHouseValue> rentHouseValue, int rentBaseValue) {
 		super();
 		this.idProperty = idProperty;
 		this.cell = cell;
@@ -88,11 +88,11 @@ public class Property {
 		this.rentHotelValue = rentHotelValue;
 	}
 
-	public List<Integer> getRentHouseValue() {
+	public List<RentHouseValue> getRentHouseValue() {
 		return rentHouseValue;
 	}
 
-	public void setRentHouseValue(List<Integer> rentHouseValue) {
+	public void setRentHouseValue(List<RentHouseValue> rentHouseValue) {
 		this.rentHouseValue = rentHouseValue;
 	}
 

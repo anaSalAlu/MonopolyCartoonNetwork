@@ -25,6 +25,4 @@ public interface PropertyDAO {
 	/* Read All */
 	public List<Property> getAll();
 
-	public List<Property> cargarPropiedades();
-
 }

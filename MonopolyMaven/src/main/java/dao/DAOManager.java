@@ -12,6 +12,9 @@ public class DAOManager {
 	private static PlayerDAO playerDAO;
 	private static ProfileDAO profileDAO;
 	private static PropertyDAO propertyDAO;
+	private static PlayerCardDAO playerCardDAO;
+	private static PlayerPropertyDAO playerPropertyDAO;
+	private static RentHouseValueDAO rentHouseValueDAO;
 
 	public static ActionDAO getActionDAO() {
 		if (actionDAO == null) {
@@ -60,5 +63,26 @@ public class DAOManager {
 			propertyDAO = new PropertyDAOSQLITE();
 		}
 		return propertyDAO;
+	}
+
+	public static PlayerCardDAO getPlayerCardDAO() {
+		if (playerCardDAO == null) {
+			playerCardDAO = new PlayerCardDAOSQLITE();
+		}
+		return playerCardDAO;
+	}
+
+	public static PlayerPropertyDAO getPlayerPropertyDAO() {
+		if (playerPropertyDAO == null) {
+			playerPropertyDAO = new PlayerPropertyDAOSQLITE();
+		}
+		return playerPropertyDAO;
+	}
+
+	public static RentHouseValueDAO getRentHouseValueDAO() {
+		if (rentHouseValueDAO == null) {
+			rentHouseValueDAO = new RentHouseValueDAOSQLITE();
+		}
+		return rentHouseValueDAO;
 	}
 }

@@ -13,16 +13,13 @@ public interface PlayerCardDAO {
 	/* Create */
 	public void addPlayerCard(PlayerCard playerCard);
 
-	/* Read */
-	public PlayerCard findPlayerCardById(int id);
-
 	/* Update */
 	public void updatePlayerCard(PlayerCard playerCard);
 
 	/* Delete */
-	public void deletePlayerCard(int id);
+	public void deletePlayerCard(int playerId, int gameId, int cardId);
 
 	/* Read All */
-	public List<PlayerCard> getAll();
+	public List<PlayerCard> findPlayerCardsByPlayerAndGame(int playerId, int gameId);
 
 }

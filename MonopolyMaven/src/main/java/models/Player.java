@@ -49,6 +49,9 @@ public class Player {
 		this.jailTurnsLeft = jailTurnsLeft;
 	}
 
+	public Player() {
+	}
+
 	public int getIdPlayer() {
 		return idPlayer;
 	}

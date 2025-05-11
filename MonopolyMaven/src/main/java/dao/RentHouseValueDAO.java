@@ -1,7 +1,5 @@
 package dao;
 
-import java.util.List;
-
 import models.RentHouseValue;
 
 /**
@@ -13,16 +11,13 @@ public interface RentHouseValueDAO {
 	/* Create */
 	public void addRentHouseValue(RentHouseValue rentHouseValue);
 
-	/* Read */
-	public RentHouseValue findRentHouseValueById(int id);
-
 	/* Update */
 	public void updateRentHouseValue(RentHouseValue rentHouseValue);
 
 	/* Delete */
-	public void deleteRentHouseValue(int id);
+	public void deleteRentHouseValue(int propertyId, int houseCount);
 
 	/* Read All */
-	public List<RentHouseValue> getAll();
+	public RentHouseValue findRentValueByPropertyAndHouseCount(int propertyId, int houseCount);
 
 }
