@@ -37,10 +37,6 @@
             <artifactId>javafx-graphics</artifactId>
             <version>21.0.5</version>
         </dependency>
-        <dependency>
-        	<groupId>cat.institutmarianao</groupId>
-        	<artifactId>sailingws</artifactId>
-        	<version>2024.09</version>
-        </dependency>
+        
     </dependencies>
 </project>

@@ -192,4 +192,16 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 		return players;
 	}
 
+	@Override
+	public List<Player> cargarJugadores() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void updatePlayerFicha(Player jugador1) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

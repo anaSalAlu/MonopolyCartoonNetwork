@@ -17,7 +17,7 @@
                </font>
             </Label>
             <ListView fx:id="listProfiles" layoutX="9.0" layoutY="100.0" prefHeight="489.0" prefWidth="780.0" />
-            <Button fx:id="goBackButton" layoutX="700.0" layoutY="560.0" mnemonicParsing="false" text="Go back" />
+            <Button fx:id="goBackButton" layoutX="700.0" layoutY="560.0" mnemonicParsing="false" onAction="#goBack" text="Go back" />
          </children>
       </AnchorPane>
    </center>

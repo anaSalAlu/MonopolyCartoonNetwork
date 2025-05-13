@@ -20,6 +20,10 @@ public class Game {
 		this.duration = duration;
 	}
 
+	public Game() {
+		// TODO Auto-generated constructor stub
+	}
+
 	public int getIdGame() {
 		return idGame;
 	}
