@@ -91,7 +91,7 @@ public class MainController {
 
 				// Pasar el parámetro al GameController
 				GameController gameController = loader.getController();
-				gameController.setNewGame(true);
+				// gameController.setNewGame(true);
 
 				stage.setScene(new Scene(root));
 				stage.show();
@@ -122,6 +122,15 @@ public class MainController {
 		}
 	}
 
+	// Esto se queda aqui.
+	// TODO solo cargar la vista de los perfiles
+	// TODO cargar si es una nueva partida(DataClass)
+
+	// Esto iría en la clase GameController.
+	// TODO pasar los demas pasos al GameController (initialize)
+	// TODO una vez obtenidos los jugadores y la vista entonces determinamos el
+	// orden de turno. Esto se hace tirando los dados y el que saque mayor numero
+	// empieza.
 	@FXML
 	public void startNewGame(ActionEvent event) {
 		try {

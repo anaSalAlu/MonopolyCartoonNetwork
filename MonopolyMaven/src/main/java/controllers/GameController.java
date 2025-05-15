@@ -92,6 +92,15 @@ public class GameController {
 
 	}
 
+	public void turn() {
+
+		// Bucle mientras el juego no ha terminado
+		// Ver si el jugador está en bancarrota o no
+		// Si está en bancarrota, se salta el turno
+		// verificamos si está en la cárcel o no
+		// Si no está en bancarrota, se lanza el dado
+	}
+
 	@FXML
 	public void exitGame() {
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
