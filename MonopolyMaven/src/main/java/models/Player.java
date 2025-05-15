@@ -16,23 +16,14 @@ public class Player {
 	public Game game;
 	public boolean isBankrupt;
 	public int jailTurnsLeft;
-	private String fichaSeleccionadaJugador1;
-	private String fichaSeleccionadaJugador2;
+	public String selectedTocken;
 
-	public String getFichaSeleccionadaJugador1() {
-		return fichaSeleccionadaJugador1;
+	public String getSelectedTocken() {
+		return selectedTocken;
 	}
 
-	public void setFichaSeleccionadaJugador1(String fichaSeleccionadaJugador1) {
-		this.fichaSeleccionadaJugador1 = fichaSeleccionadaJugador1;
-	}
-
-	public String getFichaSeleccionadaJugador2() {
-		return fichaSeleccionadaJugador2;
-	}
-
-	public void setFichaSeleccionadaJugador2(String fichaSeleccionadaJugador2) {
-		this.fichaSeleccionadaJugador2 = fichaSeleccionadaJugador2;
+	public void setSelectedTocken(String selectedTocken) {
+		this.selectedTocken = selectedTocken;
 	}
 
 	public Player(int idPlayer, Profile profile, Cell cell, int money, List<Card> cards, List<Property> properties,

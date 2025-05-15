@@ -53,4 +53,15 @@ public class Cell {
 	public void setProperty(Property property) {
 		this.property = property;
 	}
+
+	public Cell getCellById(int id) {
+		Cell[] cells = null;
+		for (Cell cell : cells) {
+			if (cell.getIdCell() == id) {
+				return cell;
+			}
+		}
+		return null; // o lanza una excepción si prefieres
+	}
+
 }

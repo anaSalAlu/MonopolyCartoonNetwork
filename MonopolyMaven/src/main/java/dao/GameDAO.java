@@ -34,6 +34,4 @@ public interface GameDAO {
 
 	public Board loadBoards();
 
-	public Game obtenerPartidaGuardada();
-
 }

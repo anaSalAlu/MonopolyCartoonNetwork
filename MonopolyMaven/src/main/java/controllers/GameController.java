@@ -19,6 +19,8 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import models.Board;
 import models.Card;
+import models.Cell;
+import models.Game;
 import models.Player;
 import models.Property;
 
@@ -65,6 +67,8 @@ public class GameController {
 	private Player jugador2;
 
 	private String fichaSeleccionadaJugador;
+	private List<Cell> cells;
+	private Game game;
 
 	@FXML
 	public void initialize() {
@@ -197,6 +201,46 @@ public class GameController {
 		} else {
 			System.out.println("Jugador no definido.");
 		}
+	}
+
+	public void setGame(Game game) {
+		this.game = game;
+	}
+
+	public void setPlayers(List<Player> players) {
+		this.players = players;
+	}
+
+	public void setBoard(Board board) {
+		this.board = board;
+	}
+
+	public void setCells(List<Cell> cells) {
+		this.cells = cells;
+	}
+
+	public void setProperties(List<Property> properties) {
+		this.properties = properties;
+	}
+
+	public void setCards(List<Card> cards) {
+		this.cards = cards;
+	}
+
+	public void setChestCards(List<Card> chestCards) {
+		this.chestCards = chestCards;
+	}
+
+	public void setLuckyCards(List<Card> luckyCards) {
+		this.luckyCards = luckyCards;
+	}
+
+	public void setPropertyCards(List<Card> propertyCards) {
+		this.propertyCards = propertyCards;
+	}
+
+	public void setChestLuckyCards(List<Card> chestLuckyCards) {
+		this.chestLuckyCards = chestLuckyCards;
 	}
 
 }

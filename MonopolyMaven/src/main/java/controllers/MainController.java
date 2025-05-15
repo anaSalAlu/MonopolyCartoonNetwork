@@ -3,9 +3,12 @@ package controllers;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import dao.CellDAO;
+import dao.CellDAOSQLITE;
 import dao.GameDAO;
 import dao.GameDAOSQLITE;
 import dao.PlayerDAO;
@@ -22,6 +25,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import models.Board;
+import models.Cell;
 import models.Game;
 import models.Game.State;
 import models.Player;
@@ -85,8 +90,8 @@ public class MainController {
 				Parent root = loader.load();
 
 				// Pasar el parámetro al GameController
-				GameController controller = loader.getController();
-				controller.setNewGame(true);
+				GameController gameController = loader.getController();
+				gameController.setNewGame(true);
 
 				stage.setScene(new Scene(root));
 				stage.show();
@@ -124,7 +129,7 @@ public class MainController {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ListProfilesView.fxml"));
 			Parent root = loader.load();
 			ListProfilesController controller = loader.getController();
-
+			CellDAO cellDAO = new CellDAOSQLITE();
 			// Mostrar la vista para seleccionar perfiles
 			Stage stage = new Stage();
 			stage.setScene(new Scene(root));
@@ -145,35 +150,40 @@ public class MainController {
 			// Paso 3: Crear una nueva partida
 			Game newGame = new Game();
 
-			newGame.setDuration(String.valueOf(60)); // Convert int to String
-			// Duración de 60 minutos
-			newGame.setState(State.IN_GAME); // Estado de la partida);
+			newGame.setDuration(String.valueOf(60));
+
+			newGame.setState(State.IN_GAME);
 
 			// Paso 4: Seleccionar fichas para cada jugador
-			List<String> availableTokens = List.of("gema.png", "mascara.png", "pankake.png", "probeta.png",
-					"rinyonera.png", "tabla.png"); // Ejemplo de fichas
+			List<String> availableTokens = new ArrayList<>(Arrays.asList("gema.png", "mascara.png", "pankake.png",
+					"probeta.png", "rinyonera.png", "tabla.png"));
+
 			List<Player> players = new ArrayList<>();
+
+			Cell startingCell = cellDAO.findCellById(0); // Obtener la celda de inicio (id 0)
 			for (Profile profile : selectedProfiles) {
 				ChoiceDialog<String> tokenDialog = new ChoiceDialog<>(availableTokens.get(0), availableTokens);
 				tokenDialog.setTitle("Seleccionar Ficha");
-				tokenDialog.setHeaderText("Selecciona una ficha para " + profile.getName());
+				tokenDialog.setHeaderText("Selecciona una ficha para " + profile.getNickname());
 				tokenDialog.setContentText("Fichas disponibles:");
+
 				Optional<String> selectedToken = tokenDialog.showAndWait();
 
 				if (selectedToken.isPresent()) {
-					// Paso 5: Crear un jugador
 					Player player = new Player();
 					player.setProfile(profile);
-					player.setMoney(1500); // Dinero inicial
+					player.setMoney(1500);
 					player.setGame(newGame);
-					player.setToken(selectedToken.get());
-					player.setCell(0); // Inicia en la celda 0
+					player.setSelectedTocken(selectedToken.get());
+					player.setCell(startingCell); // << CORRECTO AHORA
 					players.add(player);
+
+					availableTokens.remove(selectedToken.get());
 				} else {
 					Alert alert = new Alert(Alert.AlertType.ERROR);
 					alert.setTitle("Error en la Selección de Ficha");
 					alert.setHeaderText(null);
-					alert.setContentText("Debes seleccionar una ficha para " + profile.getName());
+					alert.setContentText("Debes seleccionar una ficha para " + profile.getNickname());
 					alert.showAndWait();
 					return;
 				}
@@ -181,24 +191,50 @@ public class MainController {
 
 			// Paso 6: Insertar la partida y los jugadores en la base de datos
 			GameDAO gameDAO = new GameDAOSQLITE();
-			gameDAO.insertGame(newGame);
+			gameDAO.addGame(newGame);
 
 			PlayerDAO playerDAO = new PlayerDAOSQLITE();
 			for (Player player : players) {
-				playerDAO.insertPlayer(player);
+				playerDAO.addPlayer(player);
 			}
 
-			// Paso 7: Cargar la vista del juego y pasar los datos
+			// Paso 7: Cargar la vista del juego y pasar los datos necesarios al controlador
 			FXMLLoader gameLoader = new FXMLLoader(getClass().getResource("/views/GameView.fxml"));
 			Parent gameRoot = gameLoader.load();
 			GameController gameController = gameLoader.getController();
+
+			// Obtener todas las celdas desde la base de datos
+			List<Cell> allCells = cellDAO.getAll();
+			if (allCells == null || allCells.size() < 40) {
+				Alert alert = new Alert(Alert.AlertType.ERROR);
+				alert.setTitle("Error en el Tablero");
+				alert.setHeaderText(null);
+				alert.setContentText("No se pudieron cargar las 40 celdas del tablero.");
+				alert.showAndWait();
+				return;
+			}
+
+			// Crear un tablero y asignarle las celdas
+			Board board = new Board(0, null, 0);
+			board.setCells(allCells);
+			board.setIdBoard(1); // o autogenerado si corresponde
+
+			// Asignar correctamente todo al GameController
 			gameController.setGame(newGame);
 			gameController.setPlayers(players);
+			gameController.setBoard(board);
+			gameController.setCells(allCells); // necesario para dibujar el board
+			gameController.setProperties(new ArrayList<>()); // si aún no tienes propiedades
+			gameController.setCards(new ArrayList<>());
+			gameController.setChestCards(new ArrayList<>());
+			gameController.setLuckyCards(new ArrayList<>());
+			gameController.setPropertyCards(new ArrayList<>());
+			gameController.setChestLuckyCards(new ArrayList<>());
 
+			// Mostrar la vista del juego
 			Stage gameStage = (Stage) ((Button) event.getSource()).getScene().getWindow();
 			gameStage.setScene(new Scene(gameRoot));
 			gameStage.show();
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
