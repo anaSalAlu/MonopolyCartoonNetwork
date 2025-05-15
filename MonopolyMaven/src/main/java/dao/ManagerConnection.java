@@ -31,6 +31,7 @@ public class ManagerConnection {
 
 			connexio = DriverManager.getConnection("jdbc:sqlite:" + dbFolder);
 			createTables();
+			insertDefaultData();
 			return 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -82,6 +83,10 @@ public class ManagerConnection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static void insertDefaultData() {
+
 	}
 
 }

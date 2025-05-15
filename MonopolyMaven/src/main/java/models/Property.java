@@ -17,6 +17,8 @@ public class Property {
 	public int rentHotelValue;
 	public List<RentHouseValue> rentHouseValue;
 	public int rentBaseValue;
+	public int houseNumber;
+	public int hotelNumber;
 
 	public Property(int idProperty, Cell cell, int sellValue, int buyValue, int houseBuyValue, int hotelBuyValue,
 			int rentHotelValue, List<RentHouseValue> rentHouseValue, int rentBaseValue) {
@@ -110,5 +112,21 @@ public class Property {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public int getHouseNumber() {
+		return houseNumber;
+	}
+
+	public void setHouseNumber(int houseNumber) {
+		this.houseNumber = houseNumber;
+	}
+
+	public int getHotelNumber() {
+		return hotelNumber;
+	}
+
+	public void setHotelNumber(int hotelNumber) {
+		this.hotelNumber = hotelNumber;
 	}
 }

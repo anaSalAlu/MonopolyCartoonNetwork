@@ -2,8 +2,11 @@
 package controllers;
 
 import java.io.IOException;
+import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,6 +16,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
@@ -23,8 +27,16 @@ import models.Cell;
 import models.Game;
 import models.Player;
 import models.Property;
+import models.RentHouseValue;
 
 public class GameController {
+
+	// TODO obtener el directorio resources
+	public static final String RESOURCES_DIR = "src/main/resources";
+
+	// public static final String DICE_IMAGE = RESOURCES_DIR + "/dice/dice0{0}.png";
+	public static final String DICE_IMAGE = "dice/dice0{0}.png";
+
 	@FXML
 	private Button exitButton;
 	@FXML
@@ -69,6 +81,11 @@ public class GameController {
 	private String fichaSeleccionadaJugador;
 	private List<Cell> cells;
 	private Game game;
+	@FXML
+	private ImageView imageDiceFirst;
+
+	@FXML
+	private ImageView imageDiceSecond;
 
 	@FXML
 	public void initialize() {
@@ -110,6 +127,47 @@ public class GameController {
 		});
 	}
 
+	@FXML
+	public void rollDice() {
+		Random random = new Random();
+		Thread thread = new Thread() {
+			@Override
+			public void run() {
+				try {
+					for (int i = 0; i < 15; i++) {
+						// Generamos los números de forma aleatoria del 1 al 6
+						int randomNum1 = random.nextInt(6) + 1;
+						int randomNum2 = random.nextInt(6) + 1;
+
+						// Generamos las rutas de los recursos (ya corregidas)
+						String resourcePathFirst = MessageFormat.format(DICE_IMAGE, randomNum1);
+						String resourcePathSecond = MessageFormat.format(DICE_IMAGE, randomNum2);
+
+						// Cargar las imágenes desde el classpath
+						URL resourceUrlFirst = getClass().getClassLoader().getResource(resourcePathFirst);
+						URL resourceUrlSecond = getClass().getClassLoader().getResource(resourcePathSecond);
+
+						// Creamos una imagen con el número de la cara aleatoria
+						// Image diceFace1 = new Image(MessageFormat.format(DICE_IMAGE, randomNum1));
+						// Image diceFace2 = new Image(MessageFormat.format(DICE_IMAGE, randomNum2));
+
+						Image diceFace1 = new Image(resourceUrlFirst.toString());
+						Image diceFace2 = new Image(resourcePathSecond.toString());
+
+						// Seteamos la imagen de la cara para hacer como que se está lanzando el dado
+						imageDiceFirst.setImage(diceFace1);
+						imageDiceSecond.setImage(diceFace2);
+
+						Thread.sleep(50);
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
+	}
+
 	// TODO
 	// Métodos de carga de cartas (simulados)
 	private List<Card> loadCards() {
@@ -134,7 +192,7 @@ public class GameController {
 
 	// --- FUNCIONALIDADES DE JUEGO ---
 
-	// TODO
+	// TODO cambiar método para que esté hecho de la misma forma que los demás
 	public void comprarPropiedad() {
 		System.out.println("Comprando propiedad...");
 		if (jugadorActual != null && propiedadSeleccionada != null) {
@@ -151,39 +209,102 @@ public class GameController {
 		}
 	}
 
-//TODO
+	// TODO implementar la venta de la propiedad
 	public void venderPropiedad() {
 		System.out.println("Vendiendo propiedad...");
 	}
 
-	// TODO
-	public void comprarHotel() {
-		System.out.println("Comprando hotel...");
+	/**
+	 * @author Ana
+	 */
+	// implementar la compra del hotel
+	// TODO pensar en si se necesita poner la implementación del bot,
+	// si eres bot, compras o mirar como coño hacerlo
+	public void comprarHotel(Property property, Player player) {
+		if (property.getHouseNumber() == 2 || property.getHotelNumber() < 1) {
+			System.out.println("Comprando hotel...");
+			int hotelValue = property.getHotelBuyValue();
+			int actualMoney = player.getMoney();
+			if (checkIfPlayerCanPurchase(actualMoney, hotelValue)) {
+				int substractedMoney = actualMoney - hotelValue;
+				player.setMoney(substractedMoney);
+				property.setHotelNumber(1);
+			} else {
+				player.setBankrupt(true);
+			}
+		} else {
+			System.out.println("Error, no tiene suficientes casas o ya tiene un hotel comprado");
+		}
 	}
 
-	// TODO
-	public void venderHotel() {
-		System.out.println("Vendiendo hotel...");
+	/**
+	 * 
+	 * @author Ana
+	 */
+	// implementar la venta del hotel
+	public void venderHotel(Property property, Player player) {
+		if (property.getHotelNumber() == 1) {
+			System.out.println("Vendiendo hotel...");
+			int hotelValue = property.getHotelBuyValue();
+			int actualMoney = player.getMoney();
+			if (!player.getIsBankrupt()) {
+				int addedMoney = actualMoney + hotelValue;
+				player.setMoney(addedMoney);
+				property.setHotelNumber(0);
+			} else {
+				System.out.println("Estás en bancarrota, ya no puedes jugar");
+			}
+		} else {
+			System.out.println("Error, no puedes vender el hotel porque no tienes uno");
+		}
 	}
 
-	// TODO
+	// TODO mostrar la carta
 	public void mostrarCarta() {
 		System.out.println("Mostrando carta...");
 	}
 
-	// TODO
+	// TODO mirar si estos métodos son necesarios
 	public void comprarBot() {
 		System.out.println("Bot comprando propiedad...");
 	}
 
-	// TODO
+	// TODO mirar si estos métodos son necesarios
 	public void noComprarBot() {
 		System.out.println("Bot no puede comprar propiedad...");
 	}
 
-	// TODO
-	public void cobrarAlquiler() {
+	// TODO implementar el cobro de alquiler
+	public void cobrarAlquiler(Property property, Player owner, Player renter) {
 		System.out.println("Cobrando alquiler...");
+		int rent = 0;
+		if (property.getHouseNumber() == 0 || property.getHotelNumber() == 0) {
+			rent = property.getRentBaseValue();
+		} else if (property.getHouseNumber() > 0) {
+			List<RentHouseValue> rents = null;
+			switch (property.getHouseNumber()) {
+			case 1:
+				rents = property.getRentHouseValue();
+				rent = rents.get(0).getRentValue();
+				break;
+
+			case 2:
+				rents = property.getRentHouseValue();
+				rent = rents.get(1).getRentValue();
+				break;
+			case 3:
+				rents = property.getRentHouseValue();
+				rent = rents.get(2).getRentValue();
+				break;
+			default:
+				break;
+			}
+		} else if (property.getHotelNumber() == 1) {
+			rent = property.getRentHotelValue();
+		}
+		// TODO mirar si el jugador renter puede pagar el alquiler y sino decirle que
+		// está en bancarrota
+		// TODO cobrar
 	}
 
 	// TODO
@@ -241,6 +362,17 @@ public class GameController {
 
 	public void setChestLuckyCards(List<Card> chestLuckyCards) {
 		this.chestLuckyCards = chestLuckyCards;
+	}
+
+	public Boolean checkIfPlayerCanPurchase(int actualMoney, int quantity) {
+		int substractedMoney = actualMoney - quantity;
+		if (actualMoney == 0) {
+			return false;
+		} else if (substractedMoney < 0) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 }
