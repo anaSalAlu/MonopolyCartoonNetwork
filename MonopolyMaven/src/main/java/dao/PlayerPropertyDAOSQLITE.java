@@ -83,4 +83,24 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 		return properties;
 	}
 
+	@Override
+	public boolean isPropertyOwned(int propertyId, int gameId) {
+		String sql = "SELECT COUNT(*) FROM Player_Property WHERE property_id = ? AND game_id = ?";
+		try (Connection conn = ManagerConnection.obtenirConnexio();
+				PreparedStatement statement = conn.prepareStatement(sql)) {
+
+			statement.setInt(1, propertyId);
+			statement.setInt(2, gameId);
+			ResultSet resultSet = statement.executeQuery();
+
+			if (resultSet.next()) {
+				return resultSet.getInt(1) > 0;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 }

@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import dao.DAOManager;
+import dao.GameDAO;
+import dao.PlayerCardDAO;
+import dao.PlayerDAO;
+import dao.PlayerPropertyDAO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -21,11 +26,11 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import models.Board;
 import models.Card;
-import models.Cell;
+import models.Card.CardType;
 import models.Game;
 import models.Player;
+import models.PlayerProperty;
 import models.Property;
 import models.RentHouseValue;
 
@@ -61,31 +66,46 @@ public class GameController {
 	@FXML
 	private Text player4_name;
 
-	private Player jugadorActual;
-	private Property propiedadSeleccionada;
+	/*
+	 * private Player jugadorActual; private Property propiedadSeleccionada;
+	 * 
+	 * private List<Player> players; private Board board; private List<Property>
+	 * properties; private List<Card> cards; private List<Card> chestCards; private
+	 * List<Card> luckyCards; private List<Card> propertyCards; private List<Card>
+	 * chestLuckyCards;
+	 * 
+	 * @FXML private ImageView fichaJugador;
+	 * 
+	 * private Player jugador1; private Player jugador2;
+	 * 
+	 * private String fichaSeleccionadaJugador; private List<Cell> cells; private
+	 * Game game;
+	 */
 
-	private List<Player> players;
-	private Board board;
-	private List<Property> properties;
-	private List<Card> cards;
-	private List<Card> chestCards;
-	private List<Card> luckyCards;
-	private List<Card> propertyCards;
-	private List<Card> chestLuckyCards;
-	@FXML
-	private ImageView fichaJugador;
+	// DICE
 
-	private Player jugador1;
-	private Player jugador2;
-
-	private String fichaSeleccionadaJugador;
-	private List<Cell> cells;
-	private Game game;
 	@FXML
 	private ImageView imageDiceFirst;
 
 	@FXML
 	private ImageView imageDiceSecond;
+
+	@FXML
+	private Button rollDice;
+
+	private int dice1;
+	private int dice2;
+	private boolean[] isDouble;
+
+	// Game
+	private Game actualGame;
+
+	// DAOs
+	private DAOManager daoManager = new DAOManager();
+	private PlayerDAO playerDAO = daoManager.getPlayerDAO();
+	private GameDAO gameDAO = daoManager.getGameDAO();
+	private PlayerCardDAO playerCardDAO = daoManager.getPlayerCardDAO();
+	private PlayerPropertyDAO playerPropertyDAO = daoManager.getPlayerPropertyDAO();
 
 	@FXML
 	public void initialize() {
@@ -167,6 +187,13 @@ public class GameController {
 						imageDiceFirst.setImage(diceFace1);
 						imageDiceSecond.setImage(diceFace2);
 
+						if (i == 14) {
+							// Guardamos el valor de los dados
+							dice1 = randomNum1;
+							dice2 = randomNum2;
+							isDouble[0] = (dice1 == dice2);
+						}
+
 						Thread.sleep(50);
 					}
 				} catch (InterruptedException e) {
@@ -175,6 +202,12 @@ public class GameController {
 			}
 		};
 		thread.start();
+	}
+
+	// TODO Lógica para obtener una carta aleatoria
+	public void getRandomCard(CardType cardType) {
+		Random random = new Random();
+
 	}
 
 	// TODO
@@ -201,26 +234,35 @@ public class GameController {
 
 	// --- FUNCIONALIDADES DE JUEGO ---
 
-	// TODO cambiar método para que esté hecho de la misma forma que los demás
-	public void comprarPropiedad() {
+	/**
+	 * @author Ana
+	 */
+	public void comprarPropiedad(Property property, Player player) {
 		System.out.println("Comprando propiedad...");
-		if (jugadorActual != null && propiedadSeleccionada != null) {
-			double precio = propiedadSeleccionada.getBuyValue();
-			if (jugadorActual.getMoney() >= precio) {
-				jugadorActual.setMoney((int) (jugadorActual.getMoney() - precio));
-				propiedadSeleccionada.setIdProperty(propiedadSeleccionada.getIdProperty());
-				System.out.println("Propiedad comprada: " + propiedadSeleccionada.getName());
+		boolean hasOwner = playerPropertyDAO.isPropertyOwned(property.getIdProperty(), actualGame.getIdGame());
+		if (!hasOwner) {
+			int propertyValue = property.getBuyValue();
+			int actualMoney = player.getMoney();
+			if (checkIfPlayerCanPurchase(actualMoney, propertyValue)) {
+				int substractedMoney = actualMoney - propertyValue;
+				player.setMoney(substractedMoney);
+				List<Property> properties = player.getProperties();
+				properties.add(property);
+				player.setProperties(properties);
+				playerPropertyDAO.addPlayerProperty(
+						new PlayerProperty(player.getIdPlayer(), property.getIdProperty(), actualGame.getIdGame()));
 			} else {
-				System.out.println("Dinero insuficiente.");
+				player.setBankrupt(true);
 			}
 		} else {
-			System.out.println("Jugador o propiedad no definidos.");
+			System.out.println("La propiedad ya tiene dueño");
 		}
 	}
 
 	// TODO implementar la venta de la propiedad
-	public void venderPropiedad() {
+	public void venderPropiedad(Property property, Player seller, Player buyer) {
 		System.out.println("Vendiendo propiedad...");
+
 	}
 
 	/**
@@ -283,7 +325,9 @@ public class GameController {
 		System.out.println("Bot no puede comprar propiedad...");
 	}
 
-	// TODO implementar el cobro de alquiler
+	/**
+	 * @author Ana
+	 */
 	public void cobrarAlquiler(Property property, Player owner, Player renter) {
 		System.out.println("Cobrando alquiler...");
 		int rent = 0;
@@ -311,9 +355,15 @@ public class GameController {
 		} else if (property.getHotelNumber() == 1) {
 			rent = property.getRentHotelValue();
 		}
-		// TODO mirar si el jugador renter puede pagar el alquiler y sino decirle que
-		// está en bancarrota
-		// TODO cobrar
+		if (checkIfPlayerCanPurchase(renter.getMoney(), rent)) {
+			int substractedMoney = renter.getMoney() - rent;
+			renter.setMoney(substractedMoney);
+			int addedMoney = owner.getMoney() + rent;
+			owner.setMoney(addedMoney);
+		} else {
+			renter.setBankrupt(true);
+			System.out.println("El jugador " + renter.getProfile().getNickname() + " está en bancarrota.");
+		}
 	}
 
 	// TODO
@@ -324,55 +374,18 @@ public class GameController {
 	@FXML
 	public void seleccionarFichaJugador() {
 		// Lógica para seleccionar la ficha del jugador
-		if (jugadorActual != null) {
-			jugadorActual.setCell(jugadorActual.getCell());
-			fichaSeleccionadaJugador = "fichaSeleccionada.png"; // Cambia esto por la lógica real
-			System.out.println("Ficha seleccionada: " + fichaSeleccionadaJugador);
-		} else {
-			System.out.println("Jugador no definido.");
-		}
+		/*
+		 * if (jugadorActual != null) { jugadorActual.setCell(jugadorActual.getCell());
+		 * fichaSeleccionadaJugador = "fichaSeleccionada.png"; // Cambia esto por la
+		 * lógica real System.out.println("Ficha seleccionada: " +
+		 * fichaSeleccionadaJugador); } else {
+		 * System.out.println("Jugador no definido."); }
+		 */
 	}
 
-	public void setGame(Game game) {
-		this.game = game;
-	}
-
-	public void setPlayers(List<Player> players) {
-		this.players = players;
-	}
-
-	public void setBoard(Board board) {
-		this.board = board;
-	}
-
-	public void setCells(List<Cell> cells) {
-		this.cells = cells;
-	}
-
-	public void setProperties(List<Property> properties) {
-		this.properties = properties;
-	}
-
-	public void setCards(List<Card> cards) {
-		this.cards = cards;
-	}
-
-	public void setChestCards(List<Card> chestCards) {
-		this.chestCards = chestCards;
-	}
-
-	public void setLuckyCards(List<Card> luckyCards) {
-		this.luckyCards = luckyCards;
-	}
-
-	public void setPropertyCards(List<Card> propertyCards) {
-		this.propertyCards = propertyCards;
-	}
-
-	public void setChestLuckyCards(List<Card> chestLuckyCards) {
-		this.chestLuckyCards = chestLuckyCards;
-	}
-
+	/**
+	 * @author Ana
+	 */
 	public Boolean checkIfPlayerCanPurchase(int actualMoney, int quantity) {
 		int substractedMoney = actualMoney - quantity;
 		if (actualMoney == 0) {
