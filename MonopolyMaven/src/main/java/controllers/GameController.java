@@ -41,7 +41,7 @@ public class GameController {
 	public static final String RESOURCES_DIR = "src/main/resources";
 
 	// public static final String DICE_IMAGE = RESOURCES_DIR + "/dice/dice0{0}.png";
-	public static final String DICE_IMAGE = "dice/dice0{0}.png";
+	public static final String DICE_IMAGE = "images/dice/dice0{0}.png";
 
 	@FXML
 	private Button exitButton;

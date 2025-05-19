@@ -41,7 +41,7 @@ public class MainController {
 
 	@FXML
 	public void initialize() {
-		Image img = new Image(getClass().getResource("/logos/home_logo.png").toExternalForm());
+		Image img = new Image(getClass().getResource("/images/logos/home_logo.png").toExternalForm());
 		imgLogo.setImage(img);
 		imgLogo.setFitWidth(600);
 		imgLogo.setFitHeight(400);
