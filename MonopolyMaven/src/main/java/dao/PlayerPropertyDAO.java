@@ -13,6 +13,10 @@ public interface PlayerPropertyDAO {
 	/* Create */
 	public void addPlayerProperty(PlayerProperty playerProperty);
 
+	/* Read */
+	// public PlayerProperty findPlayerProperty(int playerId, int propertyId, int
+	// gameId);
+
 	/* Update */
 	public void updatePlayerProperty(PlayerProperty playerProperty);
 
@@ -25,4 +29,6 @@ public interface PlayerPropertyDAO {
 	/* Mirar si una propiedad tiene dueño */
 	public boolean isPropertyOwned(int propertyId, int gameId);
 
+	/* Conseguir el dueño de la propiedad */
+	public int getPropertyOwner(int propertyId, int gameId);
 }

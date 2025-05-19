@@ -28,6 +28,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import models.Card;
 import models.Card.CardType;
+import models.Cell;
 import models.Game;
 import models.Player;
 import models.PlayerProperty;
@@ -99,6 +100,8 @@ public class GameController {
 
 	// Game
 	private Game actualGame;
+	private Boolean isFinished = false;
+	private Player[] orderTurn;
 
 	// DAOs
 	private DAOManager daoManager = new DAOManager();
@@ -113,12 +116,92 @@ public class GameController {
 	}
 
 	public void turn() {
+		int turn = 0;
+		while (!isGameFinished()) {
+			// Verificamos si el jugador está en bancarrota
+			if (orderTurn[turn].getIsBankrupt()) {
+				System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname() + " está en bancarrota.");
+				// Cambiamos al siguiente jugador
+				turn++;
+				if (turn >= orderTurn.length) {
+					turn = 0;
+				}
+				break;
+			} else {
+				System.out.println("Turno del jugador " + orderTurn[turn].getProfile().getNickname());
+				// Verificamos si el jugador está en la cárcel
+				if (orderTurn[turn].getJailTurnsLeft() != 0) {
+					rollDice();
+					if (isDouble[0]) {
+						// Si el jugador ha sacado dobles, lanza el dado de nuevo
+						orderTurn[turn].setJailTurnsLeft(0);
+						System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname()
+								+ " ha sacado dobles y sale de la cárcel.");
+					} else {
+						System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname()
+								+ " no ha sacado dobles y sigue en la cárcel.");
+						orderTurn[turn].setJailTurnsLeft(orderTurn[turn].getJailTurnsLeft() - 1);
 
-		// Bucle mientras el juego no ha terminado
-		// Ver si el jugador está en bancarrota o no
-		// Si está en bancarrota, se salta el turno
-		// verificamos si está en la cárcel o no
-		// Si no está en bancarrota, se lanza el dado
+					}
+				} else {
+					// Si el jugador no está en la cárcel, lanza el dado
+					rollDice();
+					System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname() + " ha sacado "
+							+ dice1 + " y " + dice2);
+					// TODO mirar lo del doble, porque no tiene sentido
+					if (isDouble[0]) {
+						// Si el jugador ha sacado dobles, lanza el dado de nuevo
+						System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname()
+								+ " ha sacado dobles y lanza de nuevo.");
+						rollDice();
+					}
+					// Avanzamos la ficha
+					Cell actualCell = orderTurn[turn].getCell();
+					int actualCellNumber = actualCell.getIdCell();
+					int nextCellNumber = actualCellNumber + (dice1 + dice2);
+					// TODO coger la celda de la base de datos
+					// orderTurn[turn].setCell();
+					Cell newCell = new Cell();
+					switch (newCell.getType()) {
+					case PROPERTY:
+						handlePropertyCell(newCell, orderTurn[turn]);
+						break;
+					case JAIL:
+						handleJailCell(orderTurn[turn]);
+						break;
+					case LUCK:
+						handleLuckCell(newCell, orderTurn[turn]);
+						break;
+					case COMMUNITY_CHEST:
+						handleCommunityChestCell(newCell, orderTurn[turn]);
+						break;
+					case START:
+						handleStartCell(newCell, orderTurn[turn]);
+						break;
+					case TAX:
+						handleTaxCell(newCell, orderTurn[turn]);
+						break;
+					default:
+						break;
+					}
+					// Se termina el turno
+					turn++;
+					if (turn >= orderTurn.length) {
+						turn = 0;
+					}
+
+					// TODO mirar si el jugador ha ganado o no
+
+					// TODO Actualizamos el estado del jugador
+				}
+			}
+		}
+	}
+
+	// TODO mirar si el estado del juego no está en playing y si el isFinished es
+	// false
+	public boolean isGameFinished() {
+		return isFinished;
 	}
 
 	@FXML
@@ -204,10 +287,79 @@ public class GameController {
 		thread.start();
 	}
 
-	// TODO Lógica para obtener una carta aleatoria
-	public void getRandomCard(CardType cardType) {
-		Random random = new Random();
+	// manejar la celda de propiedad
+	public void handlePropertyCell(Cell cell, Player player) {
+		System.out.println("Manejando celda de propiedad...");
+		Property property = cell.getProperty();
+		if (property != null) {
+			boolean hasOwner = playerPropertyDAO.isPropertyOwned(property.getIdProperty(), actualGame.getIdGame());
+			int ownerId = playerPropertyDAO.getPropertyOwner(property.getIdProperty(), actualGame.getIdGame());
+			Player owner = playerDAO.findPlayerById(ownerId);
+			if (!hasOwner) {
+				comprarPropiedad(property, player);
+			} else if (hasOwner && owner.getIdPlayer() != player.getIdPlayer()) {
+				cobrarAlquiler(property, owner, player);
+			} else {
+				// TODO mirar si el jugador quiere comprar o vender, etc.
+			}
 
+		} else {
+			System.out.println("No hay propiedad en esta celda.");
+		}
+	}
+
+	// manejar la celda de cárcel
+	public void handleJailCell(Player player) {
+		System.out.println("Manejando celda de cárcel...");
+		player.setJailTurnsLeft(3);
+	}
+
+	// manejar la celda de suerte
+	public void handleLuckCell(Cell cell, Player player) {
+		System.out.println("Manejando celda de suerte...");
+		Card luckyCard = getRandomCard(CardType.LUCK);
+		List<Card> cards = player.getCards();
+		cards.add(luckyCard);
+		player.setCards(cards);
+	}
+
+	// manejar la celda de cofre comunidad
+	public void handleCommunityChestCell(Cell cell, Player player) {
+		System.out.println("Manejando celda de cofre comunitario...");
+		Card chestCard = getRandomCard(CardType.LUCK);
+		List<Card> cards = player.getCards();
+		cards.add(chestCard);
+		player.setCards(cards);
+	}
+
+	// manejar la celda de salida
+	public void handleStartCell(Cell cell, Player player) {
+		System.out.println("Manejando celda de salida...");
+		int startMoney = 200;
+		int actualMoney = player.getMoney();
+		int addedMoney = actualMoney + startMoney;
+		player.setMoney(addedMoney);
+	}
+
+	// manejar la celda de impuestos
+	public void handleTaxCell(Cell cell, Player player) {
+		System.out.println("Manejando celda de impuestos...");
+		int taxAmount = 200;
+		int actualMoney = player.getMoney();
+		if (checkIfPlayerCanPurchase(actualMoney, taxAmount)) {
+			int substractedMoney = actualMoney - taxAmount;
+			player.setMoney(substractedMoney);
+		} else {
+			player.setBankrupt(true);
+		}
+	}
+
+	// TODO Lógica para obtener una carta aleatoria
+	public Card getRandomCard(CardType cardType) {
+		// Conseguimos todas las cartas de la base de datos
+		// Conseguimos un número aleatorio entre 0 y el número de cartas
+		// Devolvemos la carta
+		return new Card();
 	}
 
 	// TODO

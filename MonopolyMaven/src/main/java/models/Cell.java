@@ -6,7 +6,7 @@ package models;
 public class Cell {
 
 	public enum CellType {
-		PROPERTY, JAIL, LUCK, COMMUNITY_CHEST
+		PROPERTY, JAIL, LUCK, COMMUNITY_CHEST, START, TAX, FREE_PARKING
 	}
 
 	public int idCell;
@@ -20,6 +20,10 @@ public class Cell {
 		this.type = type;
 		this.card = card;
 		this.property = property;
+	}
+
+	public Cell() {
+
 	}
 
 	public int getIdCell() {

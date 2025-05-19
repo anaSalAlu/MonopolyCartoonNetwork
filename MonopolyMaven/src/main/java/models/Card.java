@@ -20,6 +20,9 @@ public class Card {
 		this.action = action;
 	}
 
+	public Card() {
+	}
+
 	public int getIdCard() {
 		return idCard;
 	}
