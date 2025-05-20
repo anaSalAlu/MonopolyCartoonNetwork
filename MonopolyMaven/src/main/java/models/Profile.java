@@ -40,4 +40,8 @@ public class Profile {
 		this.image = image;
 	}
 
+	@Override
+	public String toString() {
+		return "Profile [idProfile=" + idProfile + ", nickname=" + nickname + ", image=" + image + "]";
+	}
 }

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import dao.DAOManager;
+import dao.ProfileDAO;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,9 +14,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import models.Profile;
@@ -38,11 +42,38 @@ public class ListProfilesController {
 
 	private String selectedImagePath;
 	private static Scene previousScene;
+	private static DAOManager daoManager = new DAOManager();
+	private static ProfileDAO profileDAO = daoManager.getProfileDAO();
 
 	@FXML
 	private void initialize() {
 		// Enable multiple selection for profiles
-		listProfiles.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+		// listProfiles.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+		// Conseguir los perfiles ya directamente para que se vean al abrir la ventana
+		List<Profile> profiles = profileDAO.getAll();
+		listProfiles.getItems().clear();
+		listProfiles.setCellFactory(list -> new ListCell<Profile>() {
+			private ImageView imageView = new ImageView();
+
+			@Override
+			protected void updateItem(Profile item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null) {
+					setText(null);
+					setGraphic(null);
+				} else {
+					setText(item.nickname);
+					Image image = new Image(item.image, true);
+					imageView.setImage(image);
+					imageView.setFitHeight(30);
+					imageView.setFitWidth(30);
+					setGraphic(imageView);
+				}
+			}
+		});
+
+		listProfiles.getItems().addAll(profiles);
 	}
 
 	@FXML

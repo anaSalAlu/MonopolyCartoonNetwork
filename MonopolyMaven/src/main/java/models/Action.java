@@ -5,6 +5,10 @@ package models;
  */
 public class Action {
 
+	public enum Type {
+		PAY, PAY_PLAYERS, EXIT_JAIL, ROLL_DICE, GO_BACK_CELLS, MOVE_CELLS, SUM_CELLS, GO_EXIT, RECIEVE, RECIEVE_PLAYERS
+	}
+
 	public int idAction;
 	public String actionType;
 	public int times;

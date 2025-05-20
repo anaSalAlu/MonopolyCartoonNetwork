@@ -94,8 +94,8 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 			ResultSet resultSet = statement.executeQuery(sql);
 
 			while (resultSet.next()) {
-				int profileId = resultSet.getInt("id_card");
-				String nickname = resultSet.getString("nick");
+				int profileId = resultSet.getInt("id_profile");
+				String nickname = resultSet.getString("nickname");
 				String image = resultSet.getString("image");
 
 				Profile profile = new Profile(profileId, nickname, image);

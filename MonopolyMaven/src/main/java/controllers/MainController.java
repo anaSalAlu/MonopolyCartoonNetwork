@@ -3,6 +3,7 @@ package controllers;
 
 import java.io.IOException;
 
+import dao.ManagerConnection;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -41,6 +42,9 @@ public class MainController {
 
 	@FXML
 	public void initialize() {
+		// Cargamos primero de todo la base de datos
+		ManagerConnection.obtenirConnexio();
+
 		Image img = new Image(getClass().getResource("/images/logos/home_logo.png").toExternalForm());
 		imgLogo.setImage(img);
 		imgLogo.setFitWidth(600);
