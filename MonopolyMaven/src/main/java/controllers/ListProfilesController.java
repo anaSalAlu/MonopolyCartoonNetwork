@@ -14,11 +14,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import models.Profile;
@@ -54,7 +56,17 @@ public class ListProfilesController {
 		List<Profile> profiles = profileDAO.getAll();
 		listProfiles.getItems().clear();
 		listProfiles.setCellFactory(list -> new ListCell<Profile>() {
-			private ImageView imageView = new ImageView();
+			private final ImageView imageView = new ImageView();
+			private final Label label = new Label();
+			private final HBox content = new HBox(10);
+
+			{
+				imageView.setFitWidth(80);
+				imageView.setFitHeight(80);
+				label.setStyle("-fx-font-size: 18px;");
+				content.setStyle("-fx-padding: 10px;");
+				content.getChildren().addAll(imageView, label);
+			}
 
 			@Override
 			protected void updateItem(Profile item, boolean empty) {
@@ -63,17 +75,66 @@ public class ListProfilesController {
 					setText(null);
 					setGraphic(null);
 				} else {
-					setText(item.nickname);
-					Image image = new Image(item.image, true);
-					imageView.setImage(image);
-					imageView.setFitHeight(30);
-					imageView.setFitWidth(30);
-					setGraphic(imageView);
+					imageView.setImage(new Image(item.image, true));
+					label.setText(item.nickname);
+					setGraphic(content);
 				}
 			}
 		});
 
 		listProfiles.getItems().addAll(profiles);
+
+		// Listener para detectar el cambio de selección
+		listProfiles.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+			if (newValue != null) {
+				openProfile();
+			}
+		});
+	}
+
+	public void openProfile() {
+		// Get the selected profile
+		Profile selectedProfile = listProfiles.getSelectionModel().getSelectedItem();
+
+		if (selectedProfile != null) {
+			try {
+
+				// Load the profile view
+				FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ProfileView.fxml"));
+				Parent profileViewRoot = loader.load();
+
+				// Pass the selected profile to the ProfileController
+				ProfileController profileController = loader.getController();
+				profileController.setProfile(selectedProfile);
+
+				Scene profileViewScene = new Scene(profileViewRoot);
+				Stage stage = (Stage) listProfiles.getScene().getWindow();
+
+				stage.setScene(profileViewScene);
+				stage.show();
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@FXML
+	public void addProfile(ActionEvent event) {
+		// Show the profile creation view
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ProfileView.fxml"));
+			Parent addProfileRoot = loader.load();
+
+			Scene addProfileScene = new Scene(addProfileRoot);
+			Stage stage = (Stage) listProfiles.getScene().getWindow();
+
+			stage.setScene(addProfileScene);
+			stage.show();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@FXML

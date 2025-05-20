@@ -1,63 +1,135 @@
 package controllers;
 
+import java.io.IOException;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Cursor;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.TilePane;
 import javafx.stage.Stage;
+import models.Profile;
 
 public class ProfileController {
 
-	@FXML
-	private Button edit_image_button;
+	private static final String[] IMAGE_PATHS = { "/images/profile_photos/finn.jpg", "/images/profile_photos/jake.jpg",
+			"/images/profile_photos/bmo.jpg", "/images/profile_photos/finn.jpg", "/images/profile_photos/jake.jpg" };
 
 	@FXML
-	private Button edit_name_nutton;
-
-	public TextArea getName_text_area() {
-		return name_text_area;
-	}
-
-	public void setName_text_area(TextArea name_text_area) {
-		this.name_text_area = name_text_area;
-	}
-
-	public ImageView getPlayer_image() {
-		return player_image;
-	}
-
-	public void setPlayer_image(ImageView player_image) {
-		this.player_image = player_image;
-	}
+	private Button btnEditNickname;
 
 	@FXML
-	private TextArea name_text_area;
+	private Button btnEditProfilePhoto;
 
 	@FXML
-	private Button goBackButton;
+	private Button btnGoBack;
 
 	@FXML
-	private ImageView player_image;
+	private Button btnSaveProfile;
 
 	@FXML
-	private Button save_button;
+	private ImageView imgProfilePhoto;
+
+	@FXML
+	private TextField tfNickname;
+
+	@FXML
+	private TilePane profilePhotosPane;
+
+	@FXML
+	private ScrollPane scrollPane;
+
 	static Scene previousScene;
+	private Profile selectedProfile;
+	private String selectedImagePath;
+
+	@FXML
+	private void initialize() {
+		tfNickname.setEditable(true);
+		btnEditNickname.setVisible(false);
+		btnEditProfilePhoto.setVisible(false);
+		scrollPane.setVisible(true);
+		profilePhotosPane.setVisible(true);
+		setImagePane();
+	}
 
 	@FXML
 	public void goBack(ActionEvent event) {
 		try {
+			// Carga la nueva vista
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ListProfilesView.fxml"));
+			Parent mainViewRoot = loader.load();
 
-			// Restaurar la escena anterior si existe
-			if (previousScene != null) {
-				Stage stage = (Stage) goBackButton.getScene().getWindow();
-				stage.setScene(previousScene);
-				stage.show();
-			}
-		} catch (Exception e) {
+			Scene mainViewScene = new Scene(mainViewRoot);
+			Stage stage = (Stage) btnGoBack.getScene().getWindow();
+
+			stage.setScene(mainViewScene);
+			stage.show();
+
+		} catch (IOException e) {
 			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setTitle("Load Error");
+			alert.setHeaderText("Could not load Main View");
+			alert.setContentText("An error occurred while trying to load the main view.");
+			alert.showAndWait();
 		}
 	}
 
+	@FXML
+	void editName(ActionEvent event) {
+		tfNickname.setEditable(true);
+	}
+
+	@FXML
+	void editPhoto(ActionEvent event) {
+		scrollPane.setVisible(true);
+		profilePhotosPane.setVisible(true);
+		setImagePane();
+	}
+
+	void setImagePane() {
+		for (String imagePath : IMAGE_PATHS) {
+			Image image = new Image(imagePath, true);
+			ImageView imageView = new ImageView(image);
+			imageView.setFitWidth(100);
+			imageView.setFitHeight(100);
+			imageView.setPreserveRatio(true);
+			imageView.setCursor(Cursor.HAND);
+
+			imageView.setOnMouseClicked(e -> {
+				imgProfilePhoto.setImage(image);
+			});
+
+			profilePhotosPane.getChildren().add(imageView);
+		}
+	}
+
+	@FXML
+	void saveProfile(ActionEvent event) {
+		String nickname = tfNickname.getText();
+		String imagePath = imgProfilePhoto.getImage().getUrl();
+
+		// TODO guardar el perfil en la base de datos
+	}
+
+	public void setProfile(Profile selectedProfile) {
+		this.selectedProfile = selectedProfile;
+
+		if (selectedProfile != null) {
+			tfNickname.setEditable(false);
+			btnEditNickname.setVisible(true);
+			btnEditProfilePhoto.setVisible(true);
+			tfNickname.setText(selectedProfile.getNickname());
+			imgProfilePhoto.setImage(new Image(selectedProfile.getImage(), true));
+		}
+	}
 }
