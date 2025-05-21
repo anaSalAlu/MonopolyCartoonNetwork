@@ -32,6 +32,7 @@ import models.Cell;
 import models.Game;
 import models.Player;
 import models.PlayerProperty;
+import models.Profile;
 import models.Property;
 import models.RentHouseValue;
 
@@ -101,6 +102,7 @@ public class GameController {
 	// Game
 	private Game actualGame;
 	private Boolean isFinished = false;
+	private List<Profile> players = new ArrayList<>();
 	private Player[] orderTurn;
 
 	// DAOs
@@ -111,8 +113,79 @@ public class GameController {
 	private PlayerPropertyDAO playerPropertyDAO = daoManager.getPlayerPropertyDAO();
 
 	@FXML
-	public void initialize() {
+	public void initialize() throws IOException {
+		if (players == null || players.isEmpty()) {
+			System.out.println("Error: Los perfiles no se han cargado en el GameController.");
+		} else {
+			System.out.println("Perfiles cargados en el GameController: " + players.size());
+			for (Profile profile : players) {
+				System.out.println("Perfil: " + profile.getNickname());
+			}
+		}
+		/*
+		 * // Paso 4: Seleccionar fichas para cada jugador List<String> availableTokens
+		 * = new ArrayList<>(Arrays.asList("gema.png", "mascara.png", "pankake.png",
+		 * "probeta.png", "rinyonera.png", "tabla.png"));
+		 * 
+		 * List<Player> players = new ArrayList<>();
+		 * 
+		 * Cell startingCell = cellDAO.findCellById(0); // Obtener la celda de inicio
+		 * (id 0) for (Profile profile : selectedProfiles) { ChoiceDialog<String>
+		 * tokenDialog = new ChoiceDialog<>(availableTokens.get(0), availableTokens);
+		 * tokenDialog.setTitle("Seleccionar Ficha");
+		 * tokenDialog.setHeaderText("Selecciona una ficha para " +
+		 * profile.getNickname()); tokenDialog.setContentText("Fichas disponibles:");
+		 * 
+		 * Optional<String> selectedToken = tokenDialog.showAndWait();
+		 * 
+		 * if (selectedToken.isPresent()) { Player player = new Player();
+		 * player.setProfile(profile); player.setMoney(1500); player.setGame(newGame);
+		 * player.setSelectedTocken(selectedToken.get()); player.setCell(startingCell);
+		 * // << CORRECTO AHORA players.add(player);
+		 * 
+		 * availableTokens.remove(selectedToken.get()); } else { Alert alert = new
+		 * Alert(Alert.AlertType.ERROR);
+		 * alert.setTitle("Error en la Selección de Ficha"); alert.setHeaderText(null);
+		 * alert.setContentText("Debes seleccionar una ficha para " +
+		 * profile.getNickname()); alert.showAndWait(); return; } }
+		 * 
+		 * // Paso 6: Insertar la partida y los jugadores en la base de datos GameDAO
+		 * gameDAO = new GameDAOSQLITE(); gameDAO.addGame(newGame);
+		 * 
+		 * PlayerDAO playerDAO = new PlayerDAOSQLITE(); for (Player player : players) {
+		 * playerDAO.addPlayer(player); }
+		 */
 
+		// Paso 7: Cargar la vista del juego y pasar los datos necesarios al controlador
+		// FXMLLoader gameLoader = new
+		// FXMLLoader(getClass().getResource("/views/GameView.fxml"));
+		// Parent gameRoot = gameLoader.load();
+		/*
+		 * GameController gameController = gameLoader.getController();
+		 * 
+		 * // Obtener todas las celdas desde la base de datos List<Cell> allCells =
+		 * cellDAO.getAll(); if (allCells == null || allCells.size() < 40) { Alert alert
+		 * = new Alert(Alert.AlertType.ERROR); alert.setTitle("Error en el Tablero");
+		 * alert.setHeaderText(null);
+		 * alert.setContentText("No se pudieron cargar las 40 celdas del tablero.");
+		 * alert.showAndWait(); return; }
+		 * 
+		 * // Crear un tablero y asignarle las celdas Board board = new Board(0, null,
+		 * 0); board.setCells(allCells); board.setIdBoard(1); // o autogenerado si
+		 * corresponde
+		 */
+
+		// Asignar correctamente todo al GameController
+		/*
+		 * gameController.setGame(newGame); gameController.setPlayers(players);
+		 * gameController.setBoard(board); gameController.setCells(allCells); //
+		 * necesario para dibujar el board gameController.setProperties(new
+		 * ArrayList<>()); // si aún no tienes propiedades gameController.setCards(new
+		 * ArrayList<>()); gameController.setChestCards(new ArrayList<>());
+		 * gameController.setLuckyCards(new ArrayList<>());
+		 * gameController.setPropertyCards(new ArrayList<>());
+		 * gameController.setChestLuckyCards(new ArrayList<>());
+		 */
 	}
 
 	public void turn() {
@@ -549,4 +622,21 @@ public class GameController {
 		}
 	}
 
+	// Método para establecer el juego
+	public void setGame(Game game) {
+		this.actualGame = game;
+	}
+
+	// Método para establecer los jugadores
+	public void setPlayers(List<Profile> players) {
+		if (players == null || players.isEmpty()) {
+			System.out.println("Error: La lista de perfiles está vacía o no se ha cargado.");
+		} else {
+			System.out.println("Perfiles cargados correctamente: " + players.size());
+			for (Profile profile : players) {
+				System.out.println("Perfil: " + profile.getNickname());
+			}
+		}
+		this.players = players;
+	}
 }

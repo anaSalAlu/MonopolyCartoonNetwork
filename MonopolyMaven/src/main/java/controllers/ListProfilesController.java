@@ -42,6 +42,9 @@ public class ListProfilesController {
 	@FXML
 	private TextField nicknameField;
 
+	@FXML
+	private Button startButton;
+
 	private String selectedImagePath;
 	private static Scene previousScene;
 	private static DAOManager daoManager = new DAOManager();
@@ -207,5 +210,12 @@ public class ListProfilesController {
 
 	public static void setPreviousScene(Scene scene) {
 		previousScene = scene;
+	}
+
+	@FXML
+	public void onStartButtonClicked(ActionEvent event) {
+		// Cierra la ventana actual
+		Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
+		stage.close();
 	}
 }
