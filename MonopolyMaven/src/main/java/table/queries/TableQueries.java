@@ -11,8 +11,8 @@ public class TableQueries {
 	public static final String SQL_GAME = "CREATE TABLE IF NOT EXISTS Game (" + "id_game INT PRIMARY KEY, "
 			+ "state TEXT, " + "duration TEXT);";
 
-	public static final String SQL_PROFILE = "CREATE TABLE IF NOT EXISTS Profile (" + "id_profile INT PRIMARY KEY, "
-			+ "nickname TEXT, " + "image TEXT);";
+	public static final String SQL_PROFILE = "CREATE TABLE IF NOT EXISTS Profile ("
+			+ "id_profile INT PRIMARY KEY AUTOINCREMENT, " + "nickname TEXT, " + "image TEXT);";
 
 	public static final String SQL_BOARD = "CREATE TABLE IF NOT EXISTS Board (" + "id_board INT PRIMARY KEY, "
 			+ "size INT);";

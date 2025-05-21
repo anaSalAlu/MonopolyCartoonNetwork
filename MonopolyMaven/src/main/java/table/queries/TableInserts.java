@@ -137,8 +137,8 @@ public class TableInserts {
 			"INSERT INTO Cell (id_cell, type, board_id, property_id) VALUES(40, 'PROPERTY', 1, 26);" };
 
 	public static final String[] INSERT_PROFILES = {
-			"INSERT INTO Profile (id_profile, nickname, image) VALUES(1, 'Player 1', 'images/profile_photos/finn.jpg');",
-			"INSERT INTO Profile (id_profile, nickname, image) VALUES(2, 'Player 2', 'images/profile_photos/bmo.jpg');" };
+			"INSERT INTO Profile (nickname, image) VALUES('Player 1', 'images/profile_photos/finn.jpg');",
+			"INSERT INTO Profile (nickname, image) VALUES('Player 2', 'images/profile_photos/bmo.jpg');" };
 
 	public static final String[] INSERT_PROPERTIES = {
 			"INSERT INTO Property (id_property, sell_value, buy_value, house_buy_value, hotel_buy_value, rent_hotel_value, rent_base_value) VALUES(1, 60, 60, 50, 50, 160, 2);",

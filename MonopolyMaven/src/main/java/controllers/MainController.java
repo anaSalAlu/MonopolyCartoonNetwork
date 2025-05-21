@@ -2,7 +2,6 @@
 package controllers;
 
 import java.io.IOException;
-import java.util.List;
 
 import dao.ManagerConnection;
 import javafx.event.ActionEvent;
@@ -10,15 +9,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import models.Game;
-import models.Game.State;
-import models.Profile;
 
 public class MainController {
 
@@ -70,34 +65,27 @@ public class MainController {
 		System.exit(0);
 	}
 
-	@FXML
-	void gameMenu(ActionEvent event) {
-		try {
-			Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-
-			if (event.getSource() == btnNewGame) {
-				// Nueva partida
-				FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/GameView.fxml"));
-				Parent root = loader.load();
-
-				// Pasar el parámetro al GameController
-				GameController gameController = loader.getController();
-				// gameController.setNewGame(true);
-
-				stage.setScene(new Scene(root));
-				stage.show();
-			} else if (event.getSource() == btnContinueGame) {
-
-				FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/SavedGamesView.fxml"));
-				Parent root = loader.load();
-
-				stage.setScene(new Scene(root));
-				stage.show();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+	/*
+	 * @FXML void gameMenu(ActionEvent event) { try { Stage stage = (Stage)
+	 * ((Button) event.getSource()).getScene().getWindow();
+	 * 
+	 * if (event.getSource() == btnNewGame) { // Nueva partida FXMLLoader loader =
+	 * new FXMLLoader(getClass().getResource("/views/GameView.fxml")); Parent root =
+	 * loader.load();
+	 * 
+	 * // Pasar el parámetro al GameController GameController gameController =
+	 * loader.getController(); // gameController.setNewGame(true);
+	 * 
+	 * stage.setScene(new Scene(root)); stage.show(); } else if (event.getSource()
+	 * == btnContinueGame) {
+	 * 
+	 * FXMLLoader loader = new
+	 * FXMLLoader(getClass().getResource("/views/SavedGamesView.fxml")); Parent root
+	 * = loader.load();
+	 * 
+	 * stage.setScene(new Scene(root)); stage.show(); } } catch (IOException e) {
+	 * e.printStackTrace(); } }
+	 */
 
 	@FXML
 	void goToProfile(ActionEvent event) {
@@ -128,46 +116,48 @@ public class MainController {
 			// Paso 1: Cargar la vista ListProfilesView para seleccionar perfiles
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ListProfilesView.fxml"));
 			Parent root = loader.load();
-			ListProfilesController controller = loader.getController();
+			ListProfilesController listController = loader.getController();
+
+			listController.setNewGame(true);
+			listController.configureView();
 
 			// Mostrar la vista para seleccionar perfiles
-			Stage stage = new Stage();
-			stage.setScene(new Scene(root));
-			stage.setTitle("Seleccionar Perfiles");
-			stage.showAndWait(); // Espera a que se cierre la ventana
+			Scene listViewScene = new Scene(root);
+			Stage stage = (Stage) mainLayout.getScene().getWindow();
+
+			stage.setScene(listViewScene);
+			stage.show();
 
 			// Paso 2: Obtener los perfiles seleccionados
-			List<Profile> selectedProfiles = controller.getSelectedProfiles();
-			if (selectedProfiles.isEmpty() || selectedProfiles.size() > 2) {
-				Alert alert = new Alert(Alert.AlertType.ERROR);
-				alert.setTitle("Selección Inválida");
-				alert.setHeaderText(null);
-				alert.setContentText("Por favor, selecciona 1 o 2 perfiles.");
-				alert.showAndWait();
-
-				return;
-			}
-
-			// Paso 3: Crear una nueva partida
-			Game newGame = new Game();
-			newGame.setDuration(String.valueOf(60)); // Duración de la partida
-			newGame.setState(State.IN_GAME); // Estado inicial de la partida
-
-			// Paso 4: Cargar la vista del juego y pasar los datos necesarios al controlador
-			FXMLLoader gameLoader = new FXMLLoader(getClass().getResource("/views/GameView.fxml"));
-			Parent gameRoot = gameLoader.load();
-			GameController gameController = gameLoader.getController();
-
-			// Pasar la partida y los perfiles seleccionados al GameController
-			gameController.setGame(newGame);
-			gameController.setPlayers(selectedProfiles);
-
-			// Mostrar la vista del juego
-			Stage gameStage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-			gameStage.setScene(new Scene(gameRoot));
-			gameStage.show();
-
-			System.out.println("Perfiles seleccionados: " + selectedProfiles);
+			/*
+			 * List<Profile> selectedProfiles = controller.getSelectedProfiles(); if
+			 * (selectedProfiles.isEmpty() || selectedProfiles.size() > 2) { Alert alert =
+			 * new Alert(Alert.AlertType.ERROR); alert.setTitle("Selección Inválida");
+			 * alert.setHeaderText(null);
+			 * alert.setContentText("Por favor, selecciona 1 o 2 perfiles.");
+			 * alert.showAndWait();
+			 * 
+			 * return; }
+			 * 
+			 * // Paso 3: Crear una nueva partida Game newGame = new Game();
+			 * newGame.setDuration(String.valueOf(60)); // Duración de la partida
+			 * newGame.setState(State.IN_GAME); // Estado inicial de la partida
+			 * 
+			 * // Paso 4: Cargar la vista del juego y pasar los datos necesarios al
+			 * controlador FXMLLoader gameLoader = new
+			 * FXMLLoader(getClass().getResource("/views/GameView.fxml")); Parent gameRoot =
+			 * gameLoader.load(); GameController gameController =
+			 * gameLoader.getController();
+			 * 
+			 * // Pasar la partida y los perfiles seleccionados al GameController
+			 * gameController.setGame(newGame); gameController.setPlayers(selectedProfiles);
+			 * 
+			 * // Mostrar la vista del juego Stage gameStage = (Stage) ((Button)
+			 * event.getSource()).getScene().getWindow(); gameStage.setScene(new
+			 * Scene(gameRoot)); gameStage.show();
+			 * 
+			 * System.out.println("Perfiles seleccionados: " + selectedProfiles);
+			 */
 
 			// El método initialize() de GameController se ejecutará automáticamente
 		} catch (IOException e) {

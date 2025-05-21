@@ -16,6 +16,12 @@ public class Profile {
 		this.image = image;
 	}
 
+	public Profile(String nickname, String image) {
+		super();
+		this.nickname = nickname;
+		this.image = image;
+	}
+
 	public int getIdProfile() {
 		return idProfile;
 	}

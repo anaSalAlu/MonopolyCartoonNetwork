@@ -2,6 +2,8 @@ package controllers;
 
 import java.io.IOException;
 
+import dao.DAOManager;
+import dao.ProfileDAO;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -50,6 +52,8 @@ public class ProfileController {
 	static Scene previousScene;
 	private Profile selectedProfile;
 	private String selectedImagePath;
+	private DAOManager daoManager = new DAOManager();
+	private ProfileDAO profileDAO = daoManager.getProfileDAO();
 
 	@FXML
 	private void initialize() {
@@ -107,6 +111,7 @@ public class ProfileController {
 
 			imageView.setOnMouseClicked(e -> {
 				imgProfilePhoto.setImage(image);
+				selectedImagePath = imagePath;
 			});
 
 			profilePhotosPane.getChildren().add(imageView);
@@ -115,10 +120,15 @@ public class ProfileController {
 
 	@FXML
 	void saveProfile(ActionEvent event) {
-		String nickname = tfNickname.getText();
-		String imagePath = imgProfilePhoto.getImage().getUrl();
+		// TODO mirar si funciona el guardar en la base de datos
+		if (selectedProfile != null) {
+			profileDAO.updateProfile(selectedProfile);
+		} else {
+			String nickname = tfNickname.getText();
+			Profile profile = new Profile(nickname, selectedImagePath);
+			profileDAO.addProfile(profile);
+		}
 
-		// TODO guardar el perfil en la base de datos
 	}
 
 	public void setProfile(Profile selectedProfile) {
@@ -130,6 +140,8 @@ public class ProfileController {
 			btnEditProfilePhoto.setVisible(true);
 			tfNickname.setText(selectedProfile.getNickname());
 			imgProfilePhoto.setImage(new Image(selectedProfile.getImage(), true));
+			scrollPane.setVisible(false);
+			profilePhotosPane.setVisible(false);
 		}
 	}
 }

@@ -17,13 +17,12 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 
 	@Override
 	public void addProfile(Profile profile) {
-		String sql = "INSERT INTO Profile(id_profile, nickname, image) VALUES (?, ?, ?)";
+		String sql = "INSERT INTO Profile(nickname, image) VALUES (?, ?)";
 		try {
 			Connection conn = ManagerConnection.obtenirConnexio();
 			PreparedStatement statement = conn.prepareStatement(sql);
-			statement.setInt(1, profile.getIdProfile());
-			statement.setString(2, profile.getNickname());
-			statement.setString(3, profile.getImage());
+			statement.setString(1, profile.getNickname());
+			statement.setString(2, profile.getImage());
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
