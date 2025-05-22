@@ -8,8 +8,8 @@ public class TableQueries {
 	public static final String SQL_CARD = "CREATE TABLE IF NOT EXISTS Card (" + "id_card INT PRIMARY KEY, "
 			+ "type TEXT, " + "action_id INT, " + "FOREIGN KEY (action_id) REFERENCES Action(id_action));";
 
-	public static final String SQL_GAME = "CREATE TABLE IF NOT EXISTS Game (" + "id_game INT PRIMARY KEY, "
-			+ "state TEXT, " + "duration TEXT);";
+	public static final String SQL_GAME = "CREATE TABLE IF NOT EXISTS Game ("
+			+ "id_game INT PRIMARY KEY AUTOINCREMENT, " + "state TEXT, " + "duration TEXT);";
 
 	public static final String SQL_PROFILE = "CREATE TABLE IF NOT EXISTS Profile ("
 			+ "id_profile INT PRIMARY KEY AUTOINCREMENT, " + "nickname TEXT, " + "image TEXT);";
@@ -22,9 +22,10 @@ public class TableQueries {
 			+ "FOREIGN KEY (board_id) REFERENCES Board(id_board), " + "FOREIGN KEY (card_id) REFERENCES Card(id_card), "
 			+ "FOREIGN KEY (property_id) REFERENCES Property(id_property));";
 
-	public static final String SQL_PLAYER = "CREATE TABLE IF NOT EXISTS Player (" + "id_player INT PRIMARY KEY, "
-			+ "profile_id INT, " + "cell_id INT, " + "money INT, " + "game_id INT, " + "is_bankrupt INT, "
-			+ "jail_turns_left INT, " + "FOREIGN KEY (profile_id) REFERENCES Profile(id_profile), "
+	public static final String SQL_PLAYER = "CREATE TABLE IF NOT EXISTS Player ("
+			+ "id_player INT PRIMARY KEY AUTOINCREMENT, " + "profile_id INT, " + "cell_id INT, " + "money INT, "
+			+ "game_id INT, " + "is_bankrupt INT, " + "jail_turns_left INT, "
+			+ "FOREIGN KEY (profile_id) REFERENCES Profile(id_profile), "
 			+ "FOREIGN KEY (cell_id) REFERENCES Cell(id_cell), " + "FOREIGN KEY (game_id) REFERENCES Game(id_game));";
 
 	public static final String SQL_PROPERTY = "CREATE TABLE IF NOT EXISTS Property (" + "id_property INT PRIMARY KEY, "

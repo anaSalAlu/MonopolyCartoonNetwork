@@ -24,17 +24,16 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 
 	@Override
 	public void addPlayer(Player player) {
-		String sql = "INSERT INTO Player(id_player, profile_id, cell_id, money, game_id, is_bankrupt, jail_turns_left) VALUES (?, ?, ?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO Player(profile_id, cell_id, money, game_id, is_bankrupt, jail_turns_left) VALUES (?, ?, ?, ?, ?, ?)";
 		try (Connection conn = ManagerConnection.obtenirConnexio();
 				PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-			stmt.setInt(1, player.getIdPlayer());
-			stmt.setInt(2, player.getProfile().getIdProfile());
-			stmt.setInt(3, player.getCell().getIdCell());
-			stmt.setInt(4, player.getMoney());
-			stmt.setInt(5, player.getGame().getIdGame());
-			stmt.setInt(6, player.getIsBankrupt() ? 1 : 0);
-			stmt.setInt(7, player.getJailTurnsLeft());
+			stmt.setInt(1, player.getProfile().getIdProfile());
+			stmt.setInt(2, player.getCell().getIdCell());
+			stmt.setInt(3, player.getMoney());
+			stmt.setInt(4, player.getGame().getIdGame());
+			stmt.setInt(5, player.getIsBankrupt() ? 1 : 0);
+			stmt.setInt(6, player.getJailTurnsLeft());
 			stmt.executeUpdate();
 
 			DAOManager daoManager = new DAOManager();

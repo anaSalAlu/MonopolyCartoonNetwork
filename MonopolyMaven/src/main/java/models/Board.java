@@ -9,13 +9,11 @@ public class Board {
 
 	public int idBoard;
 	public List<Cell> cells;
-	public int size;
 
-	public Board(int idBoard, List<Cell> cells, int size) {
+	public Board(int idBoard, List<Cell> cells) {
 		super();
 		this.idBoard = idBoard;
 		this.cells = cells;
-		this.size = size;
 	}
 
 	public int getIdBoard() {
@@ -32,14 +30,6 @@ public class Board {
 
 	public void setCells(List<Cell> cells) {
 		this.cells = cells;
-	}
-
-	public int getSize() {
-		return size;
-	}
-
-	public void setSize(int size) {
-		this.size = size;
 	}
 
 	public String cellsToString() {

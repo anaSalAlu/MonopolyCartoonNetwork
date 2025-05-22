@@ -43,7 +43,7 @@ public class MainController {
 	@FXML
 	public void initialize() {
 		// Cargamos primero de todo la base de datos
-		ManagerConnection.obtenirConnexio();
+		ManagerConnection.connectar();
 
 		Image img = new Image(getClass().getResource("/images/logos/home_logo.png").toExternalForm());
 		imgLogo.setImage(img);

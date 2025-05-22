@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import models.Action;
+import models.Action.Type;
 
 /**
  * @author Ana
@@ -22,7 +23,7 @@ public class ActionDAOSQLITE implements ActionDAO {
 				PreparedStatement statement = conn.prepareStatement(sql)) {
 
 			statement.setInt(1, action.getIdAction());
-			statement.setString(2, action.getActionType());
+			statement.setString(2, action.getActionType().name());
 			statement.setInt(3, action.getTimes());
 			statement.executeUpdate();
 
@@ -41,8 +42,10 @@ public class ActionDAOSQLITE implements ActionDAO {
 			ResultSet resultSet = statement.executeQuery();
 
 			if (resultSet.next()) {
-				return new Action(resultSet.getInt("id_action"), resultSet.getString("action_type"),
-						resultSet.getInt("times"));
+				int actionId = resultSet.getInt("id_action");
+				String typeString = resultSet.getString("action_type");
+				int times = resultSet.getInt("times");
+				return new Action(actionId, Type.valueOf(typeString), times);
 			}
 
 		} catch (SQLException e) {
@@ -57,7 +60,7 @@ public class ActionDAOSQLITE implements ActionDAO {
 		try (Connection conn = ManagerConnection.obtenirConnexio();
 				PreparedStatement statement = conn.prepareStatement(sql)) {
 
-			statement.setString(1, action.getActionType());
+			statement.setString(1, action.getActionType().name());
 			statement.setInt(2, action.getTimes());
 			statement.setInt(3, action.getIdAction());
 			statement.executeUpdate();
@@ -91,8 +94,12 @@ public class ActionDAOSQLITE implements ActionDAO {
 				ResultSet resultSet = statement.executeQuery(sql)) {
 
 			while (resultSet.next()) {
-				actions.add(new Action(resultSet.getInt("id_action"), resultSet.getString("action_type"),
-						resultSet.getInt("times")));
+				int actionId = resultSet.getInt("id_action");
+				String typeString = resultSet.getString("action_type");
+				int times = resultSet.getInt("times");
+				Action action = new Action(actionId, Type.valueOf(typeString), times);
+
+				actions.add(action);
 			}
 
 		} catch (SQLException e) {

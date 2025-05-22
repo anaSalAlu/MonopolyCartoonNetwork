@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -172,22 +173,6 @@ public class ListProfilesController {
 		}
 	}
 
-	/*
-	 * @FXML public void selectImage(ActionEvent event) { FileChooser fileChooser =
-	 * new FileChooser(); fileChooser.setTitle("Select Profile Image");
-	 * fileChooser.setInitialDirectory(new File("logos"));
-	 * fileChooser.getExtensionFilters() .addAll(new
-	 * FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
-	 * 
-	 * File selectedFile =
-	 * fileChooser.showOpenDialog(selectImageButton.getScene().getWindow()); if
-	 * (selectedFile != null) { selectedImagePath = selectedFile.getAbsolutePath();
-	 * Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	 * alert.setTitle("Image Selected"); alert.setHeaderText(null);
-	 * alert.setContentText("Selected Image: " + selectedFile.getName());
-	 * alert.showAndWait(); } }
-	 */
-
 	@FXML
 	public void confirmSelection(ActionEvent event) {
 		String nickname = nicknameField.getText().trim();
@@ -239,8 +224,24 @@ public class ListProfilesController {
 
 	@FXML
 	public void onStartButtonClicked(ActionEvent event) {
-		// Cierra la ventana actual
-		Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-		stage.close();
+		try {
+			URL resource = getClass().getResource("/views/GameView.fxml");
+			System.out.println("Resource found? " + (resource != null));
+
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/GameView.fxml"));
+			Parent root = loader.load();
+
+			GameController gameController = loader.getController();
+
+			gameController.setProfiles(selectedProfiles);
+
+			Scene gameViewScene = new Scene(root);
+			Stage stage = (Stage) listProfiles.getScene().getWindow();
+
+			stage.setScene(gameViewScene);
+			stage.show();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

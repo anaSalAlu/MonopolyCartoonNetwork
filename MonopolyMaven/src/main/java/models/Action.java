@@ -10,10 +10,10 @@ public class Action {
 	}
 
 	public int idAction;
-	public String actionType;
+	public Type actionType;
 	public int times;
 
-	public Action(int idAction, String actionType, int times) {
+	public Action(int idAction, Type actionType, int times) {
 		this.idAction = idAction;
 		this.actionType = actionType;
 		this.times = times;
@@ -27,11 +27,11 @@ public class Action {
 		this.idAction = idAction;
 	}
 
-	public String getActionType() {
+	public Type getActionType() {
 		return actionType;
 	}
 
-	public void setActionType(String actionType) {
+	public void setActionType(Type actionType) {
 		this.actionType = actionType;
 	}
 

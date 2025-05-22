@@ -22,7 +22,7 @@ public class ManagerConnection {
 	// Crea la base de datos si NO existe
 	private static Connection connexio = null;
 
-	private static int connectar() {
+	public static int connectar() {
 		try {
 			// Antes de crear la conexión, miramos si la carpeta existe
 			File carpeta = new File(System.getProperty("user.dir") + "/db");
@@ -50,15 +50,8 @@ public class ManagerConnection {
 		}
 	}
 
-	public static Connection obtenirConnexio() {
-		try {
-			if (!isConnected()) {
-				connectar();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return connexio;
+	public static Connection obtenirConnexio() throws SQLException {
+		return DriverManager.getConnection("jdbc:sqlite:" + dbFolder);
 	}
 
 	public static void tancarConnexio() {

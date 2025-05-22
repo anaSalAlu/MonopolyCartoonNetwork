@@ -5,14 +5,20 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import dao.CellDAO;
 import dao.DAOManager;
 import dao.GameDAO;
 import dao.PlayerCardDAO;
 import dao.PlayerDAO;
 import dao.PlayerPropertyDAO;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -23,18 +29,23 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import models.Board;
 import models.Card;
 import models.Card.CardType;
 import models.Cell;
 import models.Game;
+import models.Game.State;
 import models.Player;
 import models.PlayerProperty;
 import models.Profile;
 import models.Property;
 import models.RentHouseValue;
+import models.TiradaJugador;
+import models.TiradaResultado;
 
 public class GameController {
 
@@ -49,40 +60,35 @@ public class GameController {
 	@FXML
 	private GridPane board_game;
 
+	// TODO quitar todos estos textos e imágenes y simplemente poner un texto y una
+	// imagen
+	// con el jugador actual, no ponemos los demás jugadores, si acaso, ponemos un
+	// pequeño
+	// list view y que salga el orden de juego para saber a quién le toca el
+	// siguiente y ya
 	@FXML
 	private ImageView player1_icon;
+
 	@FXML
 	private Text player1_name;
 
 	@FXML
 	private ImageView player2_icon;
+
 	@FXML
 	private Text player2_name;
+
 	@FXML
 	private ImageView player3_icon;
+
 	@FXML
 	private Text player3_name;
 
 	@FXML
 	private ImageView player4_icon;
+
 	@FXML
 	private Text player4_name;
-
-	/*
-	 * private Player jugadorActual; private Property propiedadSeleccionada;
-	 * 
-	 * private List<Player> players; private Board board; private List<Property>
-	 * properties; private List<Card> cards; private List<Card> chestCards; private
-	 * List<Card> luckyCards; private List<Card> propertyCards; private List<Card>
-	 * chestLuckyCards;
-	 * 
-	 * @FXML private ImageView fichaJugador;
-	 * 
-	 * private Player jugador1; private Player jugador2;
-	 * 
-	 * private String fichaSeleccionadaJugador; private List<Cell> cells; private
-	 * Game game;
-	 */
 
 	// DICE
 
@@ -95,171 +101,229 @@ public class GameController {
 	@FXML
 	private Button rollDice;
 
-	private int dice1;
-	private int dice2;
-	private boolean[] isDouble;
+	// TODO hay que crear un ImageView por cada ficha del jugador o sea se 4
+
+	// TODO ponerle un id al AnchorPane del centro del tablero y ponerlo aquí
+	@FXML
+	private AnchorPane centerPane;
 
 	// Game
 	private Game actualGame;
 	private Boolean isFinished = false;
-	private List<Profile> players = new ArrayList<>();
-	private Player[] orderTurn;
+	private Board board;
+	private int dice1;
+	private int dice2;
+	private boolean[] isDouble;
+	private Player actualPlayer;
+	private List<Player> orderTurn = new ArrayList<Player>();
+	private List<Profile> selectedProfiles = new ArrayList<Profile>();
+	private List<String> selectedTokens = new ArrayList<String>();
+	private List<Card> playerCards = new ArrayList<Card>();
+	private List<Property> playerProperties = new ArrayList<Property>();
+	private List<Cell> cells = new ArrayList<Cell>();
+	private List<Integer> diceOrder = new ArrayList<Integer>();
 
 	// DAOs
 	private DAOManager daoManager = new DAOManager();
-	private PlayerDAO playerDAO = daoManager.getPlayerDAO();
 	private GameDAO gameDAO = daoManager.getGameDAO();
+	private CellDAO cellDAO = daoManager.getCellDAO();
+	private PlayerDAO playerDAO = daoManager.getPlayerDAO();
 	private PlayerCardDAO playerCardDAO = daoManager.getPlayerCardDAO();
 	private PlayerPropertyDAO playerPropertyDAO = daoManager.getPlayerPropertyDAO();
 
-	@FXML
-	public void initialize() throws IOException {
-		if (players == null || players.isEmpty()) {
+	// TODO mirar esto porque igual ni lo necesito
+	public void setGame(Game game) {
+		this.actualGame = game;
+	}
+
+	public void setSelectedToken(String path) {
+		this.selectedTokens.add(path);
+	}
+
+	public void setProfiles(List<Profile> selectedProfiles) {
+		this.selectedProfiles = selectedProfiles;
+		if (selectedProfiles == null || selectedProfiles.isEmpty()) {
+			System.out.println("Error: Los perfiles no se han cargado en el GameController.");
+			return;
+		} else {
+			initGame();
+		}
+	}
+
+	private void initGame() {
+		if (selectedProfiles == null || selectedProfiles.isEmpty()) {
 			System.out.println("Error: Los perfiles no se han cargado en el GameController.");
 		} else {
-			System.out.println("Perfiles cargados en el GameController: " + players.size());
-			for (Profile profile : players) {
+			System.out.println("Perfiles cargados en el GameController: " + selectedProfiles.size());
+			for (Profile profile : selectedProfiles) {
 				System.out.println("Perfil: " + profile.getNickname());
 			}
 		}
-		/*
-		 * // Paso 4: Seleccionar fichas para cada jugador List<String> availableTokens
-		 * = new ArrayList<>(Arrays.asList("gema.png", "mascara.png", "pankake.png",
-		 * "probeta.png", "rinyonera.png", "tabla.png"));
-		 * 
-		 * List<Player> players = new ArrayList<>();
-		 * 
-		 * Cell startingCell = cellDAO.findCellById(0); // Obtener la celda de inicio
-		 * (id 0) for (Profile profile : selectedProfiles) { ChoiceDialog<String>
-		 * tokenDialog = new ChoiceDialog<>(availableTokens.get(0), availableTokens);
-		 * tokenDialog.setTitle("Seleccionar Ficha");
-		 * tokenDialog.setHeaderText("Selecciona una ficha para " +
-		 * profile.getNickname()); tokenDialog.setContentText("Fichas disponibles:");
-		 * 
-		 * Optional<String> selectedToken = tokenDialog.showAndWait();
-		 * 
-		 * if (selectedToken.isPresent()) { Player player = new Player();
-		 * player.setProfile(profile); player.setMoney(1500); player.setGame(newGame);
-		 * player.setSelectedTocken(selectedToken.get()); player.setCell(startingCell);
-		 * // << CORRECTO AHORA players.add(player);
-		 * 
-		 * availableTokens.remove(selectedToken.get()); } else { Alert alert = new
-		 * Alert(Alert.AlertType.ERROR);
-		 * alert.setTitle("Error en la Selección de Ficha"); alert.setHeaderText(null);
-		 * alert.setContentText("Debes seleccionar una ficha para " +
-		 * profile.getNickname()); alert.showAndWait(); return; } }
-		 * 
-		 * // Paso 6: Insertar la partida y los jugadores en la base de datos GameDAO
-		 * gameDAO = new GameDAOSQLITE(); gameDAO.addGame(newGame);
-		 * 
-		 * PlayerDAO playerDAO = new PlayerDAOSQLITE(); for (Player player : players) {
-		 * playerDAO.addPlayer(player); }
-		 */
+		// Creamos el juego
+		actualGame = new Game();
+		actualGame.setDuration("60");
+		actualGame.setState(State.IN_GAME);
 
-		// Paso 7: Cargar la vista del juego y pasar los datos necesarios al controlador
-		// FXMLLoader gameLoader = new
-		// FXMLLoader(getClass().getResource("/views/GameView.fxml"));
-		// Parent gameRoot = gameLoader.load();
-		/*
-		 * GameController gameController = gameLoader.getController();
-		 * 
-		 * // Obtener todas las celdas desde la base de datos List<Cell> allCells =
-		 * cellDAO.getAll(); if (allCells == null || allCells.size() < 40) { Alert alert
-		 * = new Alert(Alert.AlertType.ERROR); alert.setTitle("Error en el Tablero");
-		 * alert.setHeaderText(null);
-		 * alert.setContentText("No se pudieron cargar las 40 celdas del tablero.");
-		 * alert.showAndWait(); return; }
-		 * 
-		 * // Crear un tablero y asignarle las celdas Board board = new Board(0, null,
-		 * 0); board.setCells(allCells); board.setIdBoard(1); // o autogenerado si
-		 * corresponde
-		 */
+		// Creamos el juego en la base de datos
+		gameDAO.addGame(actualGame);
 
-		// Asignar correctamente todo al GameController
-		/*
-		 * gameController.setGame(newGame); gameController.setPlayers(players);
-		 * gameController.setBoard(board); gameController.setCells(allCells); //
-		 * necesario para dibujar el board gameController.setProperties(new
-		 * ArrayList<>()); // si aún no tienes propiedades gameController.setCards(new
-		 * ArrayList<>()); gameController.setChestCards(new ArrayList<>());
-		 * gameController.setLuckyCards(new ArrayList<>());
-		 * gameController.setPropertyCards(new ArrayList<>());
-		 * gameController.setChestLuckyCards(new ArrayList<>());
-		 */
+		// Mostrar la vista de seleccionar ficha
+		loadCentralView("/views/SelectTokenView.fxml", controlador -> {
+			if (controlador instanceof SelectTokenController) {
+				((SelectTokenController) controlador).setGameController(this);
+			}
+		});
+
+		// Recogemos las celdas
+		cells = cellDAO.getAll();
+
+		// Creamos el tablero
+		// TODO mirar el size porque creo que no sirve pa' na'
+		board = new Board(1, cells);
+
+		// Creamos los jugadores
+		initPlayers();
+
+		// Decidimos cuál va a ser el orden de turno de los jugadores
+		// Tendremos que mostrar la vista cada vez que se vaya a tirar los dados y
+		// entonces que devuelva el número y si son dobles
+		// Por cada jugador...
+		decidirOrdenTurno();
+	}
+
+	public void decidirOrdenTurno() {
+		List<TiradaJugador> tiradas = new ArrayList<>();
+
+		// Ejecutamos secuencialmente para cada jugador
+		new Thread(() -> {
+			for (int i = 0; i < orderTurn.size(); i++) {
+				Player jugador = orderTurn.get(i);
+				CompletableFuture<TiradaResultado> future = new CompletableFuture<>();
+
+				Platform.runLater(() -> {
+					loadCentralView("/views/RollDice.fxml", controller -> {
+						if (controller instanceof RollDiceController) {
+							RollDiceController c = (RollDiceController) controller;
+							c.setGameController(this);
+							c.setResultadoCallback(future);
+						}
+					});
+				});
+
+				try {
+					TiradaResultado resultado = future.get(); // Espera a que el jugador tire
+					tiradas.add(new TiradaJugador(jugador, resultado));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+			// Cuando todos hayan tirado, los ordenas por suma de dados
+			tiradas.sort(Comparator.comparingInt(t -> -(t.resultado.dado1 + t.resultado.dado2)));
+			orderTurn = tiradas.stream().map(t -> t.jugador).collect(Collectors.toList());
+
+			Platform.runLater(() -> {
+				System.out.println("Orden de turnos decidido:");
+				for (Player p : orderTurn) {
+					System.out.println(p.getProfile().getNickname());
+				}
+			});
+
+		}).start();
+	}
+
+	private void initPlayers() {
+		for (int i = 0; i < selectedProfiles.size(); i++) {
+			Player player = new Player();
+
+			player.profile = selectedProfiles.get(i);
+			player.cell = cells.get(0);
+			player.money = 1500;
+			player.cards = new ArrayList<>();
+			player.properties = new ArrayList<>();
+			player.game = actualGame;
+			player.isBankrupt = false;
+			player.jailTurnsLeft = 0;
+
+			// Creamos el jugador en la base de datos
+			playerDAO.addPlayer(player);
+		}
 	}
 
 	public void turn() {
 		int turn = 0;
 		while (!isGameFinished()) {
+			// Conseguimos el jugador actual
+			actualPlayer = orderTurn.get(turn);
 			// Verificamos si el jugador está en bancarrota
-			if (orderTurn[turn].getIsBankrupt()) {
-				System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname() + " está en bancarrota.");
+			if (actualPlayer.getIsBankrupt()) {
+				System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " está en bancarrota.");
 				// Cambiamos al siguiente jugador
 				turn++;
-				if (turn >= orderTurn.length) {
+				if (turn >= orderTurn.size()) {
 					turn = 0;
 				}
 				break;
 			} else {
-				System.out.println("Turno del jugador " + orderTurn[turn].getProfile().getNickname());
+				System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
 				// Verificamos si el jugador está en la cárcel
-				if (orderTurn[turn].getJailTurnsLeft() != 0) {
+				if (actualPlayer.getJailTurnsLeft() != 0) {
 					rollDice();
 					if (isDouble[0]) {
 						// Si el jugador ha sacado dobles, lanza el dado de nuevo
-						orderTurn[turn].setJailTurnsLeft(0);
-						System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname()
+						actualPlayer.setJailTurnsLeft(0);
+						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
 								+ " ha sacado dobles y sale de la cárcel.");
 					} else {
-						System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname()
+						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
 								+ " no ha sacado dobles y sigue en la cárcel.");
-						orderTurn[turn].setJailTurnsLeft(orderTurn[turn].getJailTurnsLeft() - 1);
+						actualPlayer.setJailTurnsLeft(actualPlayer.getJailTurnsLeft() - 1);
 
 					}
 				} else {
 					// Si el jugador no está en la cárcel, lanza el dado
 					rollDice();
-					System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname() + " ha sacado "
-							+ dice1 + " y " + dice2);
+					System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " ha sacado " + dice1
+							+ " y " + dice2);
 					// TODO mirar lo del doble, porque no tiene sentido
 					if (isDouble[0]) {
 						// Si el jugador ha sacado dobles, lanza el dado de nuevo
-						System.out.println("El jugador " + orderTurn[turn].getProfile().getNickname()
+						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
 								+ " ha sacado dobles y lanza de nuevo.");
 						rollDice();
 					}
 					// Avanzamos la ficha
-					Cell actualCell = orderTurn[turn].getCell();
+					Cell actualCell = actualPlayer.getCell();
 					int actualCellNumber = actualCell.getIdCell();
 					int nextCellNumber = actualCellNumber + (dice1 + dice2);
 					// TODO coger la celda de la base de datos
-					// orderTurn[turn].setCell();
+					// actualPlayer.setCell();
 					Cell newCell = new Cell();
 					switch (newCell.getType()) {
 					case PROPERTY:
-						handlePropertyCell(newCell, orderTurn[turn]);
+						handlePropertyCell(newCell, actualPlayer);
 						break;
 					case JAIL:
-						handleJailCell(orderTurn[turn]);
+						handleJailCell(actualPlayer);
 						break;
 					case LUCK:
-						handleLuckCell(newCell, orderTurn[turn]);
+						handleLuckCell(newCell, actualPlayer);
 						break;
 					case COMMUNITY_CHEST:
-						handleCommunityChestCell(newCell, orderTurn[turn]);
+						handleCommunityChestCell(newCell, actualPlayer);
 						break;
 					case START:
-						handleStartCell(newCell, orderTurn[turn]);
+						handleStartCell(newCell, actualPlayer);
 						break;
 					case TAX:
-						handleTaxCell(newCell, orderTurn[turn]);
+						handleTaxCell(newCell, actualPlayer);
 						break;
 					default:
 						break;
 					}
 					// Se termina el turno
 					turn++;
-					if (turn >= orderTurn.length) {
+					if (turn >= orderTurn.size()) {
 						turn = 0;
 					}
 
@@ -596,16 +660,38 @@ public class GameController {
 		System.out.println("Mostrando carta de cofre o suerte...");
 	}
 
-	@FXML
-	public void seleccionarFichaJugador() {
-		// Lógica para seleccionar la ficha del jugador
-		/*
-		 * if (jugadorActual != null) { jugadorActual.setCell(jugadorActual.getCell());
-		 * fichaSeleccionadaJugador = "fichaSeleccionada.png"; // Cambia esto por la
-		 * lógica real System.out.println("Ficha seleccionada: " +
-		 * fichaSeleccionadaJugador); } else {
-		 * System.out.println("Jugador no definido."); }
-		 */
+	// TODO cambiar los parámetros y nombres para que se ponga con los nombres
+	// correspondientes
+	public void loadCentralView(String nombreFXML, Consumer<Object> configurador) {
+		try {
+			System.out.println("Intentando cargar FXML: " + nombreFXML);
+			URL resource = getClass().getResource(nombreFXML);
+			System.out.println("Recurso cargado? " + (resource != null) + " -> " + resource);
+			FXMLLoader loader = new FXMLLoader(resource);
+			Parent vista = loader.load();
+
+			Object controlador = loader.getController();
+
+			// Lógica personalizada para configurar el controlador hijo
+			if (configurador != null) {
+				configurador.accept(controlador);
+			}
+
+			centerPane.getChildren().clear();
+			centerPane.getChildren().add(vista);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void ocultarPanelSeleccionFicha() {
+
+		// TODO cambiar el contenedorCentral por el contenedor que toca que es el del
+		// centro
+		// Aquí ocultas la vista (por ejemplo, limpias el panel)
+		centerPane.getChildren().clear();
+		// TODO hacerlo transparente después para que se vea el centro del tablero
+		centerPane.setVisible(false);
 	}
 
 	/**
@@ -622,21 +708,14 @@ public class GameController {
 		}
 	}
 
-	// Método para establecer el juego
-	public void setGame(Game game) {
-		this.actualGame = game;
-	}
-
+	// TODO mirar si esto es necesario, que yo creo que no
 	// Método para establecer los jugadores
-	public void setPlayers(List<Profile> players) {
-		if (players == null || players.isEmpty()) {
-			System.out.println("Error: La lista de perfiles está vacía o no se ha cargado.");
-		} else {
-			System.out.println("Perfiles cargados correctamente: " + players.size());
-			for (Profile profile : players) {
-				System.out.println("Perfil: " + profile.getNickname());
-			}
-		}
-		this.players = players;
-	}
+	/*
+	 * public void setPlayers(List<Profile> players) { if (players == null ||
+	 * players.isEmpty()) { System.out.
+	 * println("Error: La lista de perfiles está vacía o no se ha cargado."); } else
+	 * { System.out.println("Perfiles cargados correctamente: " + players.size());
+	 * for (Profile profile : players) { System.out.println("Perfil: " +
+	 * profile.getNickname()); } } this.players = players; }
+	 */
 }

@@ -16,15 +16,6 @@ public class Player {
 	public Game game;
 	public boolean isBankrupt;
 	public int jailTurnsLeft;
-	public String selectedTocken;
-
-	public String getSelectedTocken() {
-		return selectedTocken;
-	}
-
-	public void setSelectedTocken(String selectedTocken) {
-		this.selectedTocken = selectedTocken;
-	}
 
 	public Player(int idPlayer, Profile profile, Cell cell, int money, List<Card> cards, List<Property> properties,
 			Game game, boolean isBankrupt, int jailTurnsLeft) {

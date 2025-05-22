@@ -104,13 +104,14 @@ public class CellDAOSQLITE implements CellDAO {
 		List<Cell> cells = new ArrayList<Cell>();
 		String sql = "SELECT * FROM Cell";
 
+		DAOManager daoManager = new DAOManager();
+		CardDAO cardDAO = daoManager.getCardDAO();
+		PropertyDAO propertyDAO = daoManager.getPropertyDAO();
+
 		try {
 			Connection conn = ManagerConnection.obtenirConnexio();
 			Statement statement = conn.createStatement();
 			ResultSet resultSet = statement.executeQuery(sql);
-			DAOManager daoManager = new DAOManager();
-			CardDAO cardDAO = daoManager.getCardDAO();
-			PropertyDAO propertyDAO = daoManager.getPropertyDAO();
 
 			while (resultSet.next()) {
 				int cellId = resultSet.getInt("id_cell");

@@ -21,13 +21,12 @@ public class GameDAOSQLITE implements GameDAO {
 
 	@Override
 	public void addGame(Game game) {
-		String sql = "INSERT INTO Game(id_game, state, duration) VALUES (?, ?, ?)";
+		String sql = "INSERT INTO Game(state, duration) VALUES (?, ?)";
 		try {
 			Connection conn = ManagerConnection.obtenirConnexio();
 			PreparedStatement statement = conn.prepareStatement(sql);
-			statement.setInt(1, game.getIdGame());
-			statement.setString(2, game.getState().name());
-			statement.setString(3, game.getDuration());
+			statement.setString(1, game.getState().name());
+			statement.setString(2, game.getDuration());
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
@@ -48,7 +47,6 @@ public class GameDAOSQLITE implements GameDAO {
 				int gameId = resultSet.getInt("id_game");
 				String typeString = resultSet.getString("state");
 				String duration = resultSet.getString("duration");
-				// TODO Mirar lo del historial, que hace falta aquí ponerlo para conseguirlo
 				return new Game(gameId, State.valueOf(typeString), duration);
 			}
 		} catch (SQLException e) {
