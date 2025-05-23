@@ -230,7 +230,7 @@ public class GameController {
 			}
 
 			ocultarPanelSeleccionFicha();
-			startTurnCycle();
+			// startTurnCycle();
 			return;
 		}
 
@@ -358,102 +358,102 @@ public class GameController {
 //		}
 //	}
 
-	public void startTurnCycle() {
-		if (isGameFinished()) {
-			mostrarPantallaFinJuego();
-			return;
-		}
-
-		actualPlayer = orderTurn.get(turnIndex);
-
-		if (actualPlayer.getIsBankrupt()) {
-			System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " está en bancarrota.");
-			avanzarTurno();
-			return;
-		}
-
-		System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
-
-		if (actualPlayer.getJailTurnsLeft() != 0) {
-			mostrarVistaTiradaDados(resultado -> {
-				dice1 = resultado.dado1;
-				dice2 = resultado.dado2;
-				isDouble[0] = (dice1 == dice2);
-
-				if (isDouble[0]) {
-					actualPlayer.setJailTurnsLeft(0);
-					System.out.println("Sale de la cárcel por dobles.");
-				} else {
-					actualPlayer.setJailTurnsLeft(actualPlayer.getJailTurnsLeft() - 1);
-					System.out.println("Sigue en la cárcel.");
-				}
-
-				avanzarTurno();
-			});
-		} else {
-			mostrarVistaTiradaDados(resultado -> {
-				dice1 = resultado.dado1;
-				dice2 = resultado.dado2;
-				isDouble[0] = (dice1 == dice2);
-
-				System.out.println("Ha sacado " + dice1 + " y " + dice2);
-
-				moverJugador(actualPlayer, () -> {
-					Cell nuevaCelda = actualPlayer.getCell();
-
-					switch (nuevaCelda.getType()) {
-					case PROPERTY:
-						handlePropertyCell(nuevaCelda, actualPlayer, this::avanzarTurno);
-					case JAIL:
-						handleJailCell(actualPlayer, this::avanzarTurno);
-					case LUCK:
-						handleLuckCell(nuevaCelda, actualPlayer, this::avanzarTurno);
-					case COMMUNITY_CHEST:
-						handleCommunityChestCell(nuevaCelda, actualPlayer, this::avanzarTurno);
-					case START:
-						handleStartCell(nuevaCelda, actualPlayer, this::avanzarTurno);
-					case TAX:
-						handleTaxCell(nuevaCelda, actualPlayer, this::avanzarTurno);
-					default:
-						avanzarTurno();
-					}
-				});
-			});
-		}
-	}
-
-	private void avanzarTurno() {
-		turnIndex = (turnIndex + 1) % orderTurn.size();
-		Platform.runLater(this::startTurnCycle);
-	}
-
-	private void mostrarVistaTiradaDados(Consumer<TiradaResultado> callback) {
-		loadCentralView("/views/RollDice.fxml", controller -> {
-			if (controller instanceof RollDiceController c) {
-				c.setGameController(this);
-				// c.setResultadoCallback(callback);
-			}
-		});
-	}
-
-	private void moverJugador(Player jugador, Runnable onFinish) {
-		int nextId = jugador.getCell().getIdCell() + (dice1 + dice2);
-		Cell nextCell = cellDAO.findCellById(nextId);
-
-		jugador.setCell(nextCell);
-		System.out
-				.println("Jugador " + jugador.getProfile().getNickname() + " se mueve a celda " + nextCell.getIdCell());
-
-		onFinish.run(); // continúa al manejar la celda
-	}
-
-	private void handlePropertyCell(Cell cell, Player player, Runnable onFinish) {
-		loadCentralView("/views/PropertyCardView.fxml", controller -> {
-			if (controller instanceof PropertyCardController c) {
-				c.mostrarCarta(cell, player, onFinish);
-			}
-		});
-	}
+//	public void startTurnCycle() {
+//		if (isGameFinished()) {
+//			mostrarPantallaFinJuego();
+//			return;
+//		}
+//
+//		actualPlayer = orderTurn.get(turnIndex);
+//
+//		if (actualPlayer.getIsBankrupt()) {
+//			System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " está en bancarrota.");
+//			avanzarTurno();
+//			return;
+//		}
+//
+//		System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
+//
+//		if (actualPlayer.getJailTurnsLeft() != 0) {
+//			mostrarVistaTiradaDados(resultado -> {
+//				dice1 = resultado.dado1;
+//				dice2 = resultado.dado2;
+//				isDouble[0] = (dice1 == dice2);
+//
+//				if (isDouble[0]) {
+//					actualPlayer.setJailTurnsLeft(0);
+//					System.out.println("Sale de la cárcel por dobles.");
+//				} else {
+//					actualPlayer.setJailTurnsLeft(actualPlayer.getJailTurnsLeft() - 1);
+//					System.out.println("Sigue en la cárcel.");
+//				}
+//
+//				avanzarTurno();
+//			});
+//		} else {
+//			mostrarVistaTiradaDados(resultado -> {
+//				dice1 = resultado.dado1;
+//				dice2 = resultado.dado2;
+//				isDouble[0] = (dice1 == dice2);
+//
+//				System.out.println("Ha sacado " + dice1 + " y " + dice2);
+//
+//				moverJugador(actualPlayer, () -> {
+//					Cell nuevaCelda = actualPlayer.getCell();
+//
+//					switch (nuevaCelda.getType()) {
+//					case PROPERTY:
+//						handlePropertyCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+//					case JAIL:
+//						handleJailCell(actualPlayer, this::avanzarTurno);
+//					case LUCK:
+//						handleLuckCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+//					case COMMUNITY_CHEST:
+//						handleCommunityChestCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+//					case START:
+//						handleStartCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+//					case TAX:
+//						handleTaxCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+//					default:
+//						avanzarTurno();
+//					}
+//				});
+//			});
+//		}
+//	}
+//
+//	private void avanzarTurno() {
+//		turnIndex = (turnIndex + 1) % orderTurn.size();
+//		Platform.runLater(this::startTurnCycle);
+//	}
+//
+//	private void mostrarVistaTiradaDados(Consumer<TiradaResultado> callback) {
+//		loadCentralView("/views/RollDice.fxml", controller -> {
+//			if (controller instanceof RollDiceController c) {
+//				c.setGameController(this);
+//				// c.setResultadoCallback(callback);
+//			}
+//		});
+//	}
+//
+//	private void moverJugador(Player jugador, Runnable onFinish) {
+//		int nextId = jugador.getCell().getIdCell() + (dice1 + dice2);
+//		Cell nextCell = cellDAO.findCellById(nextId);
+//
+//		jugador.setCell(nextCell);
+//		System.out
+//				.println("Jugador " + jugador.getProfile().getNickname() + " se mueve a celda " + nextCell.getIdCell());
+//
+//		onFinish.run(); // continúa al manejar la celda
+//	}
+//
+//	private void handlePropertyCell(Cell cell, Player player, Runnable onFinish) {
+//		loadCentralView("/views/PropertyCardView.fxml", controller -> {
+//			if (controller instanceof PropertyCardController c) {
+//				c.mostrarCarta(cell, player, onFinish);
+//			}
+//		});
+//	}
 
 	// TODO mirar si el estado del juego no está en playing y si el isFinished es
 	// false
