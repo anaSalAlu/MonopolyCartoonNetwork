@@ -106,6 +106,7 @@ public class GameController {
 	private boolean[] isDouble;
 	private Player actualPlayer;
 	private int currentProfileIndex = 0;
+	private int turnIndex = 0;
 	private List<Player> orderTurn = new ArrayList<Player>();
 	private List<Profile> selectedProfiles = new ArrayList<Profile>();
 	private List<String> selectedTokens = new ArrayList<String>();
@@ -229,6 +230,7 @@ public class GameController {
 			}
 
 			ocultarPanelSeleccionFicha();
+			startTurnCycle();
 			return;
 		}
 
@@ -271,89 +273,186 @@ public class GameController {
 		}
 	}
 
-	public void turn() {
-		int turn = 0;
-		while (!isGameFinished()) {
-			// Conseguimos el jugador actual
-			actualPlayer = orderTurn.get(turn);
-			// Verificamos si el jugador está en bancarrota
-			if (actualPlayer.getIsBankrupt()) {
-				System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " está en bancarrota.");
-				// Cambiamos al siguiente jugador
-				turn++;
-				if (turn >= orderTurn.size()) {
-					turn = 0;
-				}
-				break;
-			} else {
-				System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
-				// Verificamos si el jugador está en la cárcel
-				if (actualPlayer.getJailTurnsLeft() != 0) {
-					// rollDice();
-					if (isDouble[0]) {
-						// Si el jugador ha sacado dobles, lanza el dado de nuevo
-						actualPlayer.setJailTurnsLeft(0);
-						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
-								+ " ha sacado dobles y sale de la cárcel.");
-					} else {
-						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
-								+ " no ha sacado dobles y sigue en la cárcel.");
-						actualPlayer.setJailTurnsLeft(actualPlayer.getJailTurnsLeft() - 1);
+//	public void turn() {
+//		int turn = 0;
+//		while (!isGameFinished()) {
+//			// Conseguimos el jugador actual
+//			actualPlayer = orderTurn.get(turn);
+//			// Verificamos si el jugador está en bancarrota
+//			if (actualPlayer.getIsBankrupt()) {
+//				System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " está en bancarrota.");
+//				// Cambiamos al siguiente jugador
+//				turn++;
+//				if (turn >= orderTurn.size()) {
+//					turn = 0;
+//				}
+//				break;
+//			} else {
+//				System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
+//				// Verificamos si el jugador está en la cárcel
+//				if (actualPlayer.getJailTurnsLeft() != 0) {
+//					// rollDice();
+//					if (isDouble[0]) {
+//						// Si el jugador ha sacado dobles, lanza el dado de nuevo
+//						actualPlayer.setJailTurnsLeft(0);
+//						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
+//								+ " ha sacado dobles y sale de la cárcel.");
+//					} else {
+//						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
+//								+ " no ha sacado dobles y sigue en la cárcel.");
+//						actualPlayer.setJailTurnsLeft(actualPlayer.getJailTurnsLeft() - 1);
+//
+//					}
+//				} else {
+//					// Si el jugador no está en la cárcel, lanza el dado
+//					// rollDice();
+//					System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " ha sacado " + dice1
+//							+ " y " + dice2);
+//					// TODO mirar lo del doble, porque no tiene sentido
+//					if (isDouble[0]) {
+//						// Si el jugador ha sacado dobles, lanza el dado de nuevo
+//						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
+//								+ " ha sacado dobles y lanza de nuevo.");
+//						// rollDice();
+//					}
+//					// Avanzamos la ficha
+//					Cell actualCell = actualPlayer.getCell();
+//					int actualCellNumber = actualCell.getIdCell();
+//					int nextCellNumber = actualCellNumber + (dice1 + dice2);
+//					// TODO coger la celda de la base de datos
+//					// actualPlayer.setCell();
+//					Cell newCell = new Cell();
+//					switch (newCell.getType()) {
+//					case PROPERTY:
+//						handlePropertyCell(newCell, actualPlayer);
+//						break;
+//					case JAIL:
+//						handleJailCell(actualPlayer);
+//						break;
+//					case LUCK:
+//						handleLuckCell(newCell, actualPlayer);
+//						break;
+//					case COMMUNITY_CHEST:
+//						handleCommunityChestCell(newCell, actualPlayer);
+//						break;
+//					case START:
+//						handleStartCell(newCell, actualPlayer);
+//						break;
+//					case TAX:
+//						handleTaxCell(newCell, actualPlayer);
+//						break;
+//					default:
+//						break;
+//					}
+//					// Se termina el turno
+//					turn++;
+//					if (turn >= orderTurn.size()) {
+//						turn = 0;
+//					}
+//
+//					// TODO mirar si el jugador ha ganado o no
+//
+//					// TODO Actualizamos el estado del jugador
+//				}
+//			}
+//		}
+//	}
 
-					}
-				} else {
-					// Si el jugador no está en la cárcel, lanza el dado
-					// rollDice();
-					System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " ha sacado " + dice1
-							+ " y " + dice2);
-					// TODO mirar lo del doble, porque no tiene sentido
-					if (isDouble[0]) {
-						// Si el jugador ha sacado dobles, lanza el dado de nuevo
-						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
-								+ " ha sacado dobles y lanza de nuevo.");
-						// rollDice();
-					}
-					// Avanzamos la ficha
-					Cell actualCell = actualPlayer.getCell();
-					int actualCellNumber = actualCell.getIdCell();
-					int nextCellNumber = actualCellNumber + (dice1 + dice2);
-					// TODO coger la celda de la base de datos
-					// actualPlayer.setCell();
-					Cell newCell = new Cell();
-					switch (newCell.getType()) {
-					case PROPERTY:
-						handlePropertyCell(newCell, actualPlayer);
-						break;
-					case JAIL:
-						handleJailCell(actualPlayer);
-						break;
-					case LUCK:
-						handleLuckCell(newCell, actualPlayer);
-						break;
-					case COMMUNITY_CHEST:
-						handleCommunityChestCell(newCell, actualPlayer);
-						break;
-					case START:
-						handleStartCell(newCell, actualPlayer);
-						break;
-					case TAX:
-						handleTaxCell(newCell, actualPlayer);
-						break;
-					default:
-						break;
-					}
-					// Se termina el turno
-					turn++;
-					if (turn >= orderTurn.size()) {
-						turn = 0;
-					}
-
-					// TODO mirar si el jugador ha ganado o no
-
-					// TODO Actualizamos el estado del jugador
-				}
-			}
+	public void startTurnCycle() {
+		if (isGameFinished()) {
+			mostrarPantallaFinJuego();
+			return;
 		}
+
+		actualPlayer = orderTurn.get(turnIndex);
+
+		if (actualPlayer.getIsBankrupt()) {
+			System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " está en bancarrota.");
+			avanzarTurno();
+			return;
+		}
+
+		System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
+
+		if (actualPlayer.getJailTurnsLeft() != 0) {
+			mostrarVistaTiradaDados(resultado -> {
+				dice1 = resultado.dado1;
+				dice2 = resultado.dado2;
+				isDouble[0] = (dice1 == dice2);
+
+				if (isDouble[0]) {
+					actualPlayer.setJailTurnsLeft(0);
+					System.out.println("Sale de la cárcel por dobles.");
+				} else {
+					actualPlayer.setJailTurnsLeft(actualPlayer.getJailTurnsLeft() - 1);
+					System.out.println("Sigue en la cárcel.");
+				}
+
+				avanzarTurno();
+			});
+		} else {
+			mostrarVistaTiradaDados(resultado -> {
+				dice1 = resultado.dado1;
+				dice2 = resultado.dado2;
+				isDouble[0] = (dice1 == dice2);
+
+				System.out.println("Ha sacado " + dice1 + " y " + dice2);
+
+				moverJugador(actualPlayer, () -> {
+					Cell nuevaCelda = actualPlayer.getCell();
+
+					switch (nuevaCelda.getType()) {
+					case PROPERTY:
+						handlePropertyCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+					case JAIL:
+						handleJailCell(actualPlayer, this::avanzarTurno);
+					case LUCK:
+						handleLuckCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+					case COMMUNITY_CHEST:
+						handleCommunityChestCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+					case START:
+						handleStartCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+					case TAX:
+						handleTaxCell(nuevaCelda, actualPlayer, this::avanzarTurno);
+					default:
+						avanzarTurno();
+					}
+				});
+			});
+		}
+	}
+
+	private void avanzarTurno() {
+		turnIndex = (turnIndex + 1) % orderTurn.size();
+		Platform.runLater(this::startTurnCycle);
+	}
+
+	private void mostrarVistaTiradaDados(Consumer<TiradaResultado> callback) {
+		loadCentralView("/views/RollDice.fxml", controller -> {
+			if (controller instanceof RollDiceController c) {
+				c.setGameController(this);
+				// c.setResultadoCallback(callback);
+			}
+		});
+	}
+
+	private void moverJugador(Player jugador, Runnable onFinish) {
+		int nextId = jugador.getCell().getIdCell() + (dice1 + dice2);
+		Cell nextCell = cellDAO.findCellById(nextId);
+
+		jugador.setCell(nextCell);
+		System.out
+				.println("Jugador " + jugador.getProfile().getNickname() + " se mueve a celda " + nextCell.getIdCell());
+
+		onFinish.run(); // continúa al manejar la celda
+	}
+
+	private void handlePropertyCell(Cell cell, Player player, Runnable onFinish) {
+		loadCentralView("/views/PropertyCardView.fxml", controller -> {
+			if (controller instanceof PropertyCardController c) {
+				c.mostrarCarta(cell, player, onFinish);
+			}
+		});
 	}
 
 	// TODO mirar si el estado del juego no está en playing y si el isFinished es
