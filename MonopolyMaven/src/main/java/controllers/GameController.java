@@ -3,14 +3,11 @@ package controllers;
 
 import java.io.IOException;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import dao.CellDAO;
 import dao.DAOManager;
@@ -27,7 +24,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
@@ -48,12 +44,6 @@ import models.TiradaJugador;
 import models.TiradaResultado;
 
 public class GameController {
-
-	// TODO obtener el directorio resources
-	public static final String RESOURCES_DIR = "src/main/resources";
-
-	// public static final String DICE_IMAGE = RESOURCES_DIR + "/dice/dice0{0}.png";
-	public static final String DICE_IMAGE = "images/dice/dice0{0}.png";
 
 	@FXML
 	private Button exitButton;
@@ -115,13 +105,14 @@ public class GameController {
 	private int dice2;
 	private boolean[] isDouble;
 	private Player actualPlayer;
+	private int currentProfileIndex = 0;
 	private List<Player> orderTurn = new ArrayList<Player>();
 	private List<Profile> selectedProfiles = new ArrayList<Profile>();
 	private List<String> selectedTokens = new ArrayList<String>();
 	private List<Card> playerCards = new ArrayList<Card>();
 	private List<Property> playerProperties = new ArrayList<Property>();
 	private List<Cell> cells = new ArrayList<Cell>();
-	private List<Integer> diceOrder = new ArrayList<Integer>();
+	private List<TiradaJugador> tiradas = new ArrayList<>();
 
 	// DAOs
 	private DAOManager daoManager = new DAOManager();
@@ -159,6 +150,8 @@ public class GameController {
 				System.out.println("Perfil: " + profile.getNickname());
 			}
 		}
+		// centerPane.setVisible(false);
+
 		// Creamos el juego
 		actualGame = new Game();
 		actualGame.setDuration("60");
@@ -167,69 +160,95 @@ public class GameController {
 		// Creamos el juego en la base de datos
 		gameDAO.addGame(actualGame);
 
-		// Mostrar la vista de seleccionar ficha
+		// Iniciar selección de tokens uno a uno
+		selectedTokens.clear();
+		seleccionarTokenParaPerfil(0);
+	}
+
+	private void seleccionarTokenParaPerfil(int index) {
+		if (index >= selectedProfiles.size()) {
+			// Ya se seleccionaron todos los tokens, continuar con el juego
+			inicializarDespuesDeSeleccionTokens();
+			ocultarPanelSeleccionFicha();
+			return;
+		}
+
+		Profile perfilActual = selectedProfiles.get(index);
+		CompletableFuture<String> futureToken = new CompletableFuture<>();
+
 		loadCentralView("/views/SelectTokenView.fxml", controlador -> {
 			if (controlador instanceof SelectTokenController) {
 				((SelectTokenController) controlador).setGameController(this);
+				((SelectTokenController) controlador).setTokenSelectedFuture(futureToken);
 			}
 		});
 
-		// Recogemos las celdas
+		futureToken.thenAccept(token -> {
+			selectedTokens.add(token);
+			seleccionarTokenParaPerfil(index + 1); // Repetimos para el siguiente perfil
+			System.out.println("Token seleccionado para " + perfilActual.getNickname() + ": " + token);
+		});
+	}
+
+	private void inicializarDespuesDeSeleccionTokens() {
 		cells = cellDAO.getAll();
-
-		// Creamos el tablero
-		// TODO mirar el size porque creo que no sirve pa' na'
 		board = new Board(1, cells);
-
-		// Creamos los jugadores
 		initPlayers();
-
-		// Decidimos cuál va a ser el orden de turno de los jugadores
-		// Tendremos que mostrar la vista cada vez que se vaya a tirar los dados y
-		// entonces que devuelva el número y si son dobles
-		// Por cada jugador...
 		decidirOrdenTurno();
 	}
 
 	public void decidirOrdenTurno() {
-		List<TiradaJugador> tiradas = new ArrayList<>();
+		tiradas.clear();
+		pedirTiradaSecuencial(0);
+	}
 
-		// Ejecutamos secuencialmente para cada jugador
-		new Thread(() -> {
-			for (int i = 0; i < orderTurn.size(); i++) {
-				Player jugador = orderTurn.get(i);
-				CompletableFuture<TiradaResultado> future = new CompletableFuture<>();
+	private void pedirTiradaSecuencial(int index) {
+		if (index >= orderTurn.size()) {
+			// Ya todos han tirado. Ordenar por resultado (mayor suma de dados primero)
+//			tiradas.sort(Comparator.comparingInt(t -> -(t.resultado.dado1 + t.resultado.dado2)));
+//			orderTurn = tiradas.stream().map(t -> t.jugador).collect(Collectors.toList());
+//
+//			
+//
+//			Platform.runLater(() -> {
+//				System.out.println("Orden de turnos decidido:");
+//				for (Player p : orderTurn) {
+//					System.out.println(p.getProfile().getNickname());
+//				}
+//			});
 
-				Platform.runLater(() -> {
-					loadCentralView("/views/RollDice.fxml", controller -> {
-						if (controller instanceof RollDiceController) {
-							RollDiceController c = (RollDiceController) controller;
-							c.setGameController(this);
-							c.setResultadoCallback(future);
-						}
-					});
-				});
+			// Ordenamos las tiradas según la suma de los dados (mayor primero)
+			tiradas.sort(Comparator.comparingInt(t -> -(t.resultado.dado1 + t.resultado.dado2)));
 
-				try {
-					TiradaResultado resultado = future.get(); // Espera a que el jugador tire
-					tiradas.add(new TiradaJugador(jugador, resultado));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+			// Limpiamos la lista existente y le agregamos los jugadores en orden
+			orderTurn.clear();
+			for (TiradaJugador t : tiradas) {
+				orderTurn.add(t.jugador);
+				System.out.println("Jugador " + t.jugador.getProfile().getNickname() + " tiró: "
+						+ (t.resultado.dado1 + t.resultado.dado2));
 			}
 
-			// Cuando todos hayan tirado, los ordenas por suma de dados
-			tiradas.sort(Comparator.comparingInt(t -> -(t.resultado.dado1 + t.resultado.dado2)));
-			orderTurn = tiradas.stream().map(t -> t.jugador).collect(Collectors.toList());
+			ocultarPanelSeleccionFicha();
+			return;
+		}
 
-			Platform.runLater(() -> {
-				System.out.println("Orden de turnos decidido:");
-				for (Player p : orderTurn) {
-					System.out.println(p.getProfile().getNickname());
+		Player jugador = orderTurn.get(index);
+		CompletableFuture<TiradaResultado> future = new CompletableFuture<>();
+
+		Platform.runLater(() -> {
+			loadCentralView("/views/RollDice.fxml", controller -> {
+				if (controller instanceof RollDiceController) {
+					RollDiceController c = (RollDiceController) controller;
+					c.setGameController(this);
+					c.setResultadoCallback(future);
 				}
 			});
+		});
 
-		}).start();
+		future.thenAccept(resultado -> {
+			tiradas.add(new TiradaJugador(jugador, resultado));
+			pedirTiradaSecuencial(index + 1);
+		});
 	}
 
 	private void initPlayers() {
@@ -244,6 +263,8 @@ public class GameController {
 			player.game = actualGame;
 			player.isBankrupt = false;
 			player.jailTurnsLeft = 0;
+
+			orderTurn.add(player);
 
 			// Creamos el jugador en la base de datos
 			playerDAO.addPlayer(player);
@@ -268,7 +289,7 @@ public class GameController {
 				System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
 				// Verificamos si el jugador está en la cárcel
 				if (actualPlayer.getJailTurnsLeft() != 0) {
-					rollDice();
+					// rollDice();
 					if (isDouble[0]) {
 						// Si el jugador ha sacado dobles, lanza el dado de nuevo
 						actualPlayer.setJailTurnsLeft(0);
@@ -282,7 +303,7 @@ public class GameController {
 					}
 				} else {
 					// Si el jugador no está en la cárcel, lanza el dado
-					rollDice();
+					// rollDice();
 					System.out.println("El jugador " + actualPlayer.getProfile().getNickname() + " ha sacado " + dice1
 							+ " y " + dice2);
 					// TODO mirar lo del doble, porque no tiene sentido
@@ -290,7 +311,7 @@ public class GameController {
 						// Si el jugador ha sacado dobles, lanza el dado de nuevo
 						System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
 								+ " ha sacado dobles y lanza de nuevo.");
-						rollDice();
+						// rollDice();
 					}
 					// Avanzamos la ficha
 					Cell actualCell = actualPlayer.getCell();
@@ -374,54 +395,6 @@ public class GameController {
 				System.exit(0);
 			}
 		});
-	}
-
-	@FXML
-	public void rollDice() {
-		Random random = new Random();
-		Thread thread = new Thread() {
-			@Override
-			public void run() {
-				try {
-					for (int i = 0; i < 15; i++) {
-						// Generamos los números de forma aleatoria del 1 al 6
-						int randomNum1 = random.nextInt(6) + 1;
-						int randomNum2 = random.nextInt(6) + 1;
-
-						// Generamos las rutas de los recursos (ya corregidas)
-						String resourcePathFirst = MessageFormat.format(DICE_IMAGE, randomNum1);
-						String resourcePathSecond = MessageFormat.format(DICE_IMAGE, randomNum2);
-
-						// Cargar las imágenes desde el classpath
-						URL resourceUrlFirst = getClass().getClassLoader().getResource(resourcePathFirst);
-						URL resourceUrlSecond = getClass().getClassLoader().getResource(resourcePathSecond);
-
-						// Creamos una imagen con el número de la cara aleatoria
-						// Image diceFace1 = new Image(MessageFormat.format(DICE_IMAGE, randomNum1));
-						// Image diceFace2 = new Image(MessageFormat.format(DICE_IMAGE, randomNum2));
-
-						Image diceFace1 = new Image(resourceUrlFirst.toString());
-						Image diceFace2 = new Image(resourcePathSecond.toString());
-
-						// Seteamos la imagen de la cara para hacer como que se está lanzando el dado
-						imageDiceFirst.setImage(diceFace1);
-						imageDiceSecond.setImage(diceFace2);
-
-						if (i == 14) {
-							// Guardamos el valor de los dados
-							dice1 = randomNum1;
-							dice2 = randomNum2;
-							isDouble[0] = (dice1 == dice2);
-						}
-
-						Thread.sleep(50);
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
 	}
 
 	// manejar la celda de propiedad
@@ -664,6 +637,7 @@ public class GameController {
 	// correspondientes
 	public void loadCentralView(String nombreFXML, Consumer<Object> configurador) {
 		try {
+			centerPane.setVisible(true);
 			System.out.println("Intentando cargar FXML: " + nombreFXML);
 			URL resource = getClass().getResource(nombreFXML);
 			System.out.println("Recurso cargado? " + (resource != null) + " -> " + resource);
@@ -691,7 +665,7 @@ public class GameController {
 		// Aquí ocultas la vista (por ejemplo, limpias el panel)
 		centerPane.getChildren().clear();
 		// TODO hacerlo transparente después para que se vea el centro del tablero
-		centerPane.setVisible(false);
+		// centerPane.setVisible(false);
 	}
 
 	/**
