@@ -16,6 +16,7 @@ public class Player {
 	public Game game;
 	public boolean isBankrupt;
 	public int jailTurnsLeft;
+	public String token;
 
 	public Player(int idPlayer, Profile profile, Cell cell, int money, List<Card> cards, List<Property> properties,
 			Game game, boolean isBankrupt, int jailTurnsLeft) {
@@ -104,6 +105,14 @@ public class Player {
 
 	public void setJailTurnsLeft(int jailTurnsLeft) {
 		this.jailTurnsLeft = jailTurnsLeft;
+	}
+
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 
 }

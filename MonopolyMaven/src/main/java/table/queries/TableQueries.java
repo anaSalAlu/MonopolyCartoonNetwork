@@ -9,10 +9,10 @@ public class TableQueries {
 			+ "type TEXT, " + "action_id INT, " + "FOREIGN KEY (action_id) REFERENCES Action(id_action));";
 
 	public static final String SQL_GAME = "CREATE TABLE IF NOT EXISTS Game ("
-			+ "id_game INT PRIMARY KEY AUTOINCREMENT, " + "state TEXT, " + "duration TEXT);";
+			+ "id_game INTEGER  PRIMARY KEY AUTOINCREMENT, " + "state TEXT, " + "duration TEXT);";
 
 	public static final String SQL_PROFILE = "CREATE TABLE IF NOT EXISTS Profile ("
-			+ "id_profile INT PRIMARY KEY AUTOINCREMENT, " + "nickname TEXT, " + "image TEXT);";
+			+ "id_profile INTEGER  PRIMARY KEY AUTOINCREMENT, " + "nickname TEXT, " + "image TEXT);";
 
 	public static final String SQL_BOARD = "CREATE TABLE IF NOT EXISTS Board (" + "id_board INT PRIMARY KEY, "
 			+ "size INT);";
@@ -23,7 +23,7 @@ public class TableQueries {
 			+ "FOREIGN KEY (property_id) REFERENCES Property(id_property));";
 
 	public static final String SQL_PLAYER = "CREATE TABLE IF NOT EXISTS Player ("
-			+ "id_player INT PRIMARY KEY AUTOINCREMENT, " + "profile_id INT, " + "cell_id INT, " + "money INT, "
+			+ "id_player INTEGER  PRIMARY KEY AUTOINCREMENT, " + "profile_id INT, " + "cell_id INT, " + "money INT, "
 			+ "game_id INT, " + "is_bankrupt INT, " + "jail_turns_left INT, "
 			+ "FOREIGN KEY (profile_id) REFERENCES Profile(id_profile), "
 			+ "FOREIGN KEY (cell_id) REFERENCES Cell(id_cell), " + "FOREIGN KEY (game_id) REFERENCES Game(id_game));";

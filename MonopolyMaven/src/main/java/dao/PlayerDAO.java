@@ -25,8 +25,4 @@ public interface PlayerDAO {
 	/* Read All */
 	public List<Player> getAll();
 
-	public List<Player> cargarJugadores();
-
-	public void updatePlayerFicha(Player jugador1);
-
 }

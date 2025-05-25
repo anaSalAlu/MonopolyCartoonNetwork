@@ -8,11 +8,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import models.Board;
 import models.Game;
 import models.Game.State;
 import models.Player;
-import models.Property;
 
 /**
  * @author Ana
@@ -22,27 +20,41 @@ public class GameDAOSQLITE implements GameDAO {
 	@Override
 	public void addGame(Game game) {
 		String sql = "INSERT INTO Game(state, duration) VALUES (?, ?)";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setString(1, game.getState().name());
 			statement.setString(2, game.getDuration());
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public Game findGameById(int id) {
 		String sql = "SELECT * FROM Game WHERE id_game = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, id);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 			if (resultSet.next()) {
 				int gameId = resultSet.getInt("id_game");
 				String typeString = resultSet.getString("state");
@@ -51,6 +63,17 @@ public class GameDAOSQLITE implements GameDAO {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -58,9 +81,12 @@ public class GameDAOSQLITE implements GameDAO {
 	@Override
 	public void updateGame(Game game) {
 		String sql = "UPDATE Game SET state = ?, duration = ? WHERE id_game = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setString(1, game.getState().name());
 			statement.setString(2, game.getDuration());
 			statement.setInt(3, game.getIdGame());
@@ -68,20 +94,39 @@ public class GameDAOSQLITE implements GameDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void deleteGame(int id) {
 		String sql = "DELETE FROM Game WHERE id_game = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, id);
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -89,11 +134,14 @@ public class GameDAOSQLITE implements GameDAO {
 	public List<Game> getAll() {
 		List<Game> games = new ArrayList<Game>();
 		String sql = "SELECT * FROM Card";
+		Connection conn = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
 
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			Statement statement = conn.createStatement();
-			ResultSet resultSet = statement.executeQuery(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.createStatement();
+			resultSet = statement.executeQuery(sql);
 
 			while (resultSet.next()) {
 				int gameId = resultSet.getInt("id_game");
@@ -106,6 +154,17 @@ public class GameDAOSQLITE implements GameDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return games;
 	}
@@ -117,18 +176,6 @@ public class GameDAOSQLITE implements GameDAO {
 		// Agrega lógica para obtener jugadores desde la base de datos
 		System.out.println("Cargando jugadores desde la base de datos...");
 		return players;
-	}
-
-	@Override
-	public List<Property> loadProperties() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Board loadBoards() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

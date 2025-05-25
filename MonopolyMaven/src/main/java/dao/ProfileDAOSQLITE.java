@@ -18,27 +18,42 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 	@Override
 	public void addProfile(Profile profile) {
 		String sql = "INSERT INTO Profile(nickname, image) VALUES (?, ?)";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setString(1, profile.getNickname());
 			statement.setString(2, profile.getImage());
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
+
 	}
 
 	@Override
 	public Profile findProfileById(int id) {
 		String sqlCard = "SELECT * FROM Profile WHERE id_profile = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sqlCard);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sqlCard);
 			statement.setInt(1, id);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 			if (resultSet.next()) {
 				int profileId = resultSet.getInt("id_card");
 				String nickname = resultSet.getString("nickname");
@@ -48,6 +63,17 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -55,9 +81,12 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 	@Override
 	public void updateProfile(Profile profile) {
 		String sql = "UPDATE Profile SET nickname = ?, image = ? WHERE id_profile = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setString(1, profile.getNickname());
 			statement.setString(2, profile.getImage());
 			statement.setInt(3, profile.getIdProfile());
@@ -65,20 +94,39 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void deleteProfile(int id) {
 		String sql = "DELETE FROM Profile WHERE id_profile = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, id);
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -86,11 +134,14 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 	public List<Profile> getAll() {
 		List<Profile> profiles = new ArrayList<Profile>();
 		String sql = "SELECT * FROM Profile";
+		Connection conn = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
 
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-			Statement statement = conn.createStatement();
-			ResultSet resultSet = statement.executeQuery(sql);
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.createStatement();
+			resultSet = statement.executeQuery(sql);
 
 			while (resultSet.next()) {
 				int profileId = resultSet.getInt("id_profile");
@@ -103,6 +154,17 @@ public class ProfileDAOSQLITE implements ProfileDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return profiles;
 	}

@@ -9,14 +9,20 @@ import java.util.List;
 
 import models.PlayerProperty;
 
+/**
+ * @author Ana
+ */
 public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 
 	@Override
 	public void addPlayerProperty(PlayerProperty playerProperty) {
 		String sql = "INSERT INTO Player_Property(player_id, property_id, game_id) VALUES (?, ?, ?)";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, playerProperty.getPlayerId());
 			statement.setInt(2, playerProperty.getPropertyId());
 			statement.setInt(3, playerProperty.getGameId());
@@ -24,6 +30,14 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -63,13 +77,16 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 	public List<PlayerProperty> findPlayerPropertiesByPlayerAndGame(int playerId, int gameId) {
 		List<PlayerProperty> properties = new ArrayList<>();
 		String sql = "SELECT * FROM Player_Property WHERE player_id = ? AND game_id = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
-
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, playerId);
 			statement.setInt(2, gameId);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 
 			while (resultSet.next()) {
 				int propertyId = resultSet.getInt("property_id");
@@ -78,6 +95,17 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return properties;
@@ -86,12 +114,16 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 	@Override
 	public boolean isPropertyOwned(int propertyId, int gameId) {
 		String sql = "SELECT COUNT(*) FROM Player_Property WHERE property_id = ? AND game_id = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, propertyId);
 			statement.setInt(2, gameId);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 
 			if (resultSet.next()) {
 				return resultSet.getInt(1) > 0;
@@ -99,6 +131,17 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return false;
 	}
@@ -106,12 +149,16 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 	@Override
 	public int getPropertyOwner(int propertyId, int gameId) {
 		String sql = "SELECT player_id FROM Player_Property WHERE property_id = ? AND game_id = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, propertyId);
 			statement.setInt(2, gameId);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 
 			if (resultSet.next()) {
 				return resultSet.getInt("player_id");
@@ -119,6 +166,17 @@ public class PlayerPropertyDAOSQLITE implements PlayerPropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return -1;
 	}

@@ -6,7 +6,7 @@ package models;
 public class Cell {
 
 	public enum CellType {
-		PROPERTY, JAIL, LUCK, COMMUNITY_CHEST, START, TAX, FREE_PARKING
+		PROPERTY, JAIL, LUCK, COMMUNITY_CHEST, START, TAX, PARKING
 	}
 
 	public int idCell;

@@ -21,22 +21,21 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 	public void addProperty(Property property) {
 		String sqlProperty = "INSERT INTO Property(id_property, cell_id, sell_value, buy_value, house_buy_value, hotel_buy_value, "
 				+ "rent_hotel_value, rent_base_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		Connection conn = null;
+		PreparedStatement statement = null;
 
 		try {
-			Connection conn = ManagerConnection.obtenirConnexio();
-
-			// Insertar en tabla Property
-			try (PreparedStatement statement = conn.prepareStatement(sqlProperty)) {
-				statement.setInt(1, property.getIdProperty());
-				statement.setInt(2, property.getCell().getIdCell());
-				statement.setInt(3, property.getSellValue());
-				statement.setInt(4, property.getBuyValue());
-				statement.setInt(5, property.getHouseBuyValue());
-				statement.setInt(6, property.getHotelBuyValue());
-				statement.setInt(7, property.getRentHotelValue());
-				statement.setInt(8, property.getRentBaseValue());
-				statement.executeUpdate();
-			}
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sqlProperty);
+			statement.setInt(1, property.getIdProperty());
+			statement.setInt(2, property.getCell().getIdCell());
+			statement.setInt(3, property.getSellValue());
+			statement.setInt(4, property.getBuyValue());
+			statement.setInt(5, property.getHouseBuyValue());
+			statement.setInt(6, property.getHotelBuyValue());
+			statement.setInt(7, property.getRentHotelValue());
+			statement.setInt(8, property.getRentBaseValue());
+			statement.executeUpdate();
 
 			if (property.getRentHouseValue() != null && !property.getRentHouseValue().isEmpty()) {
 				DAOManager daoManager = new DAOManager();
@@ -49,18 +48,29 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public Property findPropertyById(int id) {
 		String sql = "SELECT * FROM Property WHERE id_property = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
-
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, id);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 
 			if (resultSet.next()) {
 				int propertyId = resultSet.getInt("id_property");
@@ -92,6 +102,17 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -100,10 +121,12 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 	public void updateProperty(Property property) {
 		String sql = "UPDATE Property SET cell_id = ?, sell_value = ?, buy_value = ?, house_buy_value = ?, "
 				+ "hotel_buy_value = ?, rent_hotel_value = ?, rent_base_value = ? WHERE id_property = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
 
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
-
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, property.getCell().getIdCell());
 			statement.setInt(2, property.getSellValue());
 			statement.setInt(3, property.getBuyValue());
@@ -128,12 +151,25 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void deleteProperty(int id) {
-		try (Connection conn = ManagerConnection.obtenirConnexio()) {
+		String sql = "DELETE FROM Property WHERE id_property = ?";
+		Connection conn = null;
+		PreparedStatement statement = null;
+
+		try {
+			conn = ManagerConnection.obtenirConnexio();
 			DAOManager daoManager = new DAOManager();
 			RentHouseValueDAO rentDAO = daoManager.getRentHouseValueDAO();
 
@@ -141,14 +177,20 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 				rentDAO.deleteRentHouseValue(id, houseCount);
 			}
 
-			String sql = "DELETE FROM Property WHERE id_property = ?";
-			try (PreparedStatement statement = conn.prepareStatement(sql)) {
-				statement.setInt(1, id);
-				statement.executeUpdate();
-			}
+			statement = conn.prepareStatement(sql);
+			statement.setInt(1, id);
+			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -156,11 +198,14 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 	public List<Property> getAll() {
 		List<Property> properties = new ArrayList<>();
 		String sql = "SELECT * FROM Property";
+		Connection conn = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
 
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				Statement statement = conn.createStatement();
-				ResultSet resultSet = statement.executeQuery(sql)) {
-
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.createStatement();
+			resultSet = statement.executeQuery(sql);
 			DAOManager daoManager = new DAOManager();
 			CellDAO cellDAO = daoManager.getCellDAO();
 			RentHouseValueDAO rentDAO = daoManager.getRentHouseValueDAO();
@@ -192,6 +237,17 @@ public class PropertyDAOSQLITE implements PropertyDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return properties;

@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,16 +24,19 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 	@Override
 	public void addPlayer(Player player) {
 		String sql = "INSERT INTO Player(profile_id, cell_id, money, game_id, is_bankrupt, jail_turns_left) VALUES (?, ?, ?, ?, ?, ?)";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement stmt = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
-			stmt.setInt(1, player.getProfile().getIdProfile());
-			stmt.setInt(2, player.getCell().getIdCell());
-			stmt.setInt(3, player.getMoney());
-			stmt.setInt(4, player.getGame().getIdGame());
-			stmt.setInt(5, player.getIsBankrupt() ? 1 : 0);
-			stmt.setInt(6, player.getJailTurnsLeft());
-			stmt.executeUpdate();
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
+			statement.setInt(1, player.getProfile().getIdProfile());
+			statement.setInt(2, player.getCell().getIdCell());
+			statement.setInt(3, player.getMoney());
+			statement.setInt(4, player.getGame().getIdGame());
+			statement.setInt(5, player.getIsBankrupt() ? 1 : 0);
+			statement.setInt(6, player.getJailTurnsLeft());
+			statement.executeUpdate();
 
 			DAOManager daoManager = new DAOManager();
 			PlayerCardDAO cardDAO = daoManager.getPlayerCardDAO();
@@ -52,25 +54,37 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public Player findPlayerById(int id) {
 		String sql = "SELECT * FROM Player WHERE id_player = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement stmt = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
-			stmt.setInt(1, id);
-			ResultSet rs = stmt.executeQuery();
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
+			statement.setInt(1, id);
+			resultSet = statement.executeQuery();
 
-			if (rs.next()) {
-				int profileId = rs.getInt("profile_id");
-				int cellId = rs.getInt("cell_id");
-				int money = rs.getInt("money");
-				int gameId = rs.getInt("game_id");
-				boolean isBankrupt = rs.getInt("is_bankrupt") == 1;
-				int jailTurns = rs.getInt("jail_turns_left");
+			if (resultSet.next()) {
+				int profileId = resultSet.getInt("profile_id");
+				int cellId = resultSet.getInt("cell_id");
+				int money = resultSet.getInt("money");
+				int gameId = resultSet.getInt("game_id");
+				boolean isBankrupt = resultSet.getInt("is_bankrupt") == 1;
+				int jailTurns = resultSet.getInt("jail_turns_left");
 
 				DAOManager daoManager = new DAOManager();
 				ProfileDAO profileDAO = daoManager.getProfileDAO();
@@ -112,6 +126,20 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -119,17 +147,20 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 	@Override
 	public void updatePlayer(Player player) {
 		String sql = "UPDATE Player SET profile_id = ?, cell_id = ?, money = ?, game_id = ?, is_bankrupt = ?, jail_turns_left = ? WHERE id_player = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement stmt = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
-			stmt.setInt(1, player.getProfile().getIdProfile());
-			stmt.setInt(2, player.getCell().getIdCell());
-			stmt.setInt(3, player.getMoney());
-			stmt.setInt(4, player.getGame().getIdGame());
-			stmt.setInt(5, player.getIsBankrupt() ? 1 : 0);
-			stmt.setInt(6, player.getJailTurnsLeft());
-			stmt.setInt(7, player.getIdPlayer());
-			stmt.executeUpdate();
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
+			statement.setInt(1, player.getProfile().getIdProfile());
+			statement.setInt(2, player.getCell().getIdCell());
+			statement.setInt(3, player.getMoney());
+			statement.setInt(4, player.getGame().getIdGame());
+			statement.setInt(5, player.getIsBankrupt() ? 1 : 0);
+			statement.setInt(6, player.getJailTurnsLeft());
+			statement.setInt(7, player.getIdPlayer());
+			statement.executeUpdate();
 
 			DAOManager daoManager = new DAOManager();
 			PlayerCardDAO cardDAO = daoManager.getPlayerCardDAO();
@@ -151,20 +182,39 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void deletePlayer(int id) {
 		String sql = "DELETE FROM Player WHERE id_player = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement stmt = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
-			stmt.setInt(1, id);
-			stmt.executeUpdate();
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
+			statement.setInt(1, id);
+			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -172,13 +222,16 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 	public List<Player> getAll() {
 		List<Player> players = new ArrayList<>();
 		String sql = "SELECT * FROM Player";
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(sql)) {
-
-			while (rs.next()) {
-				Player player = findPlayerById(rs.getInt("id_player"));
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
+			resultSet = statement.executeQuery(sql);
+			while (resultSet.next()) {
+				Player player = findPlayerById(resultSet.getInt("id_player"));
 				if (player != null) {
 					players.add(player);
 				}
@@ -186,21 +239,23 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return players;
-	}
-
-	@Override
-	public List<Player> cargarJugadores() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void updatePlayerFicha(Player jugador1) {
-		// TODO Auto-generated method stub
-
 	}
 
 }

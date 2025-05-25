@@ -50,8 +50,14 @@ public class ManagerConnection {
 		}
 	}
 
-	public static Connection obtenirConnexio() throws SQLException {
-		return DriverManager.getConnection("jdbc:sqlite:" + dbFolder);
+	public static synchronized Connection obtenirConnexio() throws SQLException {
+		if (connexio == null || connexio.isClosed()) {
+			connexio = DriverManager.getConnection("jdbc:sqlite:" + dbFolder);
+			try (Statement stmt = connexio.createStatement()) {
+				stmt.execute("PRAGMA journal_mode=WAL;");
+			}
+		}
+		return connexio;
 	}
 
 	public static void tancarConnexio() {

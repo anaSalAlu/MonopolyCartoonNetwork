@@ -19,9 +19,12 @@ public class ActionDAOSQLITE implements ActionDAO {
 	@Override
 	public void addAction(Action action) {
 		String sql = "INSERT INTO Action(id_action, action_type, times) VALUES (?, ?, ?)";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, action.getIdAction());
 			statement.setString(2, action.getActionType().name());
 			statement.setInt(3, action.getTimes());
@@ -29,17 +32,29 @@ public class ActionDAOSQLITE implements ActionDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public Action findActionById(int id) {
 		String sql = "SELECT * FROM Action WHERE id_action = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, id);
-			ResultSet resultSet = statement.executeQuery();
+			resultSet = statement.executeQuery();
 
 			if (resultSet.next()) {
 				int actionId = resultSet.getInt("id_action");
@@ -50,6 +65,17 @@ public class ActionDAOSQLITE implements ActionDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -57,9 +83,12 @@ public class ActionDAOSQLITE implements ActionDAO {
 	@Override
 	public void updateAction(Action action) {
 		String sql = "UPDATE Action SET action_type = ?, times = ? WHERE id_action = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setString(1, action.getActionType().name());
 			statement.setInt(2, action.getTimes());
 			statement.setInt(3, action.getIdAction());
@@ -67,20 +96,39 @@ public class ActionDAOSQLITE implements ActionDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void deleteAction(int id) {
 		String sql = "DELETE FROM Action WHERE id_action = ?";
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				PreparedStatement statement = conn.prepareStatement(sql)) {
+		Connection conn = null;
+		PreparedStatement statement = null;
 
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.prepareStatement(sql);
 			statement.setInt(1, id);
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -88,11 +136,14 @@ public class ActionDAOSQLITE implements ActionDAO {
 	public List<Action> getAll() {
 		List<Action> actions = new ArrayList<>();
 		String sql = "SELECT * FROM Action";
+		Connection conn = null;
+		Statement statement = null;
+		ResultSet resultSet = null;
 
-		try (Connection conn = ManagerConnection.obtenirConnexio();
-				Statement statement = conn.createStatement();
-				ResultSet resultSet = statement.executeQuery(sql)) {
-
+		try {
+			conn = ManagerConnection.obtenirConnexio();
+			statement = conn.createStatement();
+			resultSet = statement.executeQuery(sql);
 			while (resultSet.next()) {
 				int actionId = resultSet.getInt("id_action");
 				String typeString = resultSet.getString("action_type");
@@ -104,6 +155,17 @@ public class ActionDAOSQLITE implements ActionDAO {
 
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		return actions;
 	}
