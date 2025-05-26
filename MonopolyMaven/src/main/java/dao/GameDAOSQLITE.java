@@ -18,22 +18,32 @@ import models.Player;
 public class GameDAOSQLITE implements GameDAO {
 
 	@Override
-	public void addGame(Game game) {
+	public int addGame(Game game) {
 		String sql = "INSERT INTO Game(state, duration) VALUES (?, ?)";
 		Connection conn = null;
 		PreparedStatement statement = null;
+		ResultSet resultSet = null;
 
 		try {
 			conn = ManagerConnection.obtenirConnexio();
-			statement = conn.prepareStatement(sql);
+			statement = conn.prepareStatement(sql, statement.RETURN_GENERATED_KEYS);
 			statement.setString(1, game.getState().name());
 			statement.setString(2, game.getDuration());
 			statement.executeUpdate();
+
+			resultSet = statement.getGeneratedKeys();
+			if (resultSet.next()) {
+				int id = resultSet.getInt(1);
+				return id;
+			}
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
 			try {
+				if (resultSet != null) {
+					resultSet.close();
+				}
 				if (statement != null) {
 					statement.close();
 				}
@@ -41,6 +51,7 @@ public class GameDAOSQLITE implements GameDAO {
 				e.printStackTrace();
 			}
 		}
+		return 0;
 	}
 
 	@Override

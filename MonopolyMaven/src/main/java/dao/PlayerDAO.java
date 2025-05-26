@@ -11,7 +11,7 @@ public interface PlayerDAO {
 
 	/* CRUD operations */
 	/* Create */
-	public void addPlayer(Player player);
+	public int addPlayer(Player player);
 
 	/* Read */
 	public Player findPlayerById(int id);

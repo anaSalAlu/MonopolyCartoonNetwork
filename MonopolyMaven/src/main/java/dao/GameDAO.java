@@ -12,7 +12,7 @@ public interface GameDAO {
 
 	/* CRUD operations */
 	/* Create */
-	public void addGame(Game game);
+	public int addGame(Game game);
 
 	/* Read */
 	public Game findGameById(int id);

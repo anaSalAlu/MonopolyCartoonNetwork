@@ -22,14 +22,14 @@ import models.Property;
 public class PlayerDAOSQLITE implements PlayerDAO {
 
 	@Override
-	public void addPlayer(Player player) {
+	public int addPlayer(Player player) {
 		String sql = "INSERT INTO Player(profile_id, cell_id, money, game_id, is_bankrupt, jail_turns_left) VALUES (?, ?, ?, ?, ?, ?)";
 		Connection conn = null;
 		PreparedStatement statement = null;
 
 		try {
 			conn = ManagerConnection.obtenirConnexio();
-			statement = conn.prepareStatement(sql);
+			statement = conn.prepareStatement(sql, statement.RETURN_GENERATED_KEYS);
 			statement.setInt(1, player.getProfile().getIdProfile());
 			statement.setInt(2, player.getCell().getIdCell());
 			statement.setInt(3, player.getMoney());
@@ -52,6 +52,12 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 						player.getGame().getIdGame()));
 			}
 
+			ResultSet resultSet = statement.getGeneratedKeys();
+			if (resultSet.next()) {
+				int id = resultSet.getInt(1);
+				return id;
+			}
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -63,6 +69,7 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 				e.printStackTrace();
 			}
 		}
+		return 0;
 	}
 
 	@Override

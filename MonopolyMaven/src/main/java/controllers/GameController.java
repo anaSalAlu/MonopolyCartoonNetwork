@@ -12,6 +12,7 @@ import java.util.Random;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import dao.CardDAO;
 import dao.CellDAO;
 import dao.DAOManager;
 import dao.GameDAO;
@@ -35,6 +36,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -55,22 +58,34 @@ import models.TiradaResultado;
 
 public class GameController {
 
+	// TODO implementar las acciones
+	// TODO implementar el que se muevan las fichas
+	// TODO implementar que se vea mejor la tirada de los dados
+	// TODO terminar el tablero
+	// TODO hacer el fin del juego
+	// TODO hacer el mensaje del fin del juego
+	// TODO coger el mensaje de alquiler y hacerlo bien
+	// TODO mirar el dado doble
+	// TODO ordenar todo
+	// TODO si da tiempo cambiar las variables a ingles
+
 	public static final String[] TOKENS_IMAGES = { "/images/tokens/gema.png", "/images/tokens/mascara.png",
 			"/images/tokens/pankake.png", "/images/tokens/probeta.png", "/images/tokens/rinyonera.png",
 			"/images/tokens/tabla.png" };
 	public static final String DICE_IMAGE = "images/dice/dice0{0}.png";
+	public static final String PROPERTY_IMAGE = "images/properties/{0}.png";
+	private static final String LUCK_IMAGE = "images/lucky/{0}.png";
+	private static final String CHEST_IMAGE = "images/chest/{0}.png";
 	private static final int TOTAL_NUM_CELLS = 40;
+	private static final int NUM_CARD_INIT_CHEST = 33;
+	private static final int NUM_CARD_FINISH_CHEST = 64;
+	private static final int NUM_CARD_INIT_LUCK = 1;
+	private static final int NUM_CARD_FINISH_LUCK = 32;
 
 	@FXML
 	private Button exitButton;
 	@FXML
 	private GridPane board_game;
-
-	@FXML
-	private Label lblFirstPlayer;
-
-	@FXML
-	private Label lblFourthPlayer;
 
 	@FXML
 	private Text lblPlayerName;
@@ -79,10 +94,10 @@ public class GameController {
 	private ImageView imgPlayerPhoto;
 
 	@FXML
-	private Label lblSecondPlayer;
+	private VBox playerOrderContainer;
 
 	@FXML
-	private Label lblThirdPlayer;
+	private Label lblAction;
 
 	// DICE
 
@@ -97,7 +112,6 @@ public class GameController {
 
 	// TODO hay que crear un ImageView por cada ficha del jugador o sea se 4
 
-	// TODO ponerle un id al AnchorPane del centro del tablero y ponerlo aquí
 	@FXML
 	private AnchorPane centerPane;
 
@@ -122,24 +136,27 @@ public class GameController {
 	private List<TiradaJugador> tiradas = new ArrayList<>();
 	private Map<Profile, Integer> tiradasPorJugador = new HashMap<>();
 	private Consumer<TiradaResultado> resultadoCallback;
+	private List<Label> playerLabels = new ArrayList<>();
 
 	// DAOs
 	private DAOManager daoManager = new DAOManager();
 	private GameDAO gameDAO = daoManager.getGameDAO();
 	private CellDAO cellDAO = daoManager.getCellDAO();
+	private CardDAO cardDAO = daoManager.getCardDAO();
 	private PlayerDAO playerDAO = daoManager.getPlayerDAO();
 	private PlayerCardDAO playerCardDAO = daoManager.getPlayerCardDAO();
 	private PlayerPropertyDAO playerPropertyDAO = daoManager.getPlayerPropertyDAO();
 
-	// TODO mirar esto porque igual ni lo necesito
-	public void setGame(Game game) {
-		this.actualGame = game;
-	}
-
+	/**
+	 * @author Ana
+	 */
 	public void setSelectedToken(String path) {
 		this.selectedTokens.add(path);
 	}
 
+	/**
+	 * @author Ana
+	 */
 	public void setProfiles(List<Profile> selectedProfiles) {
 		this.selectedProfiles = selectedProfiles;
 		if (selectedProfiles == null || selectedProfiles.isEmpty()) {
@@ -150,6 +167,9 @@ public class GameController {
 		}
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void initGame() {
 		if (selectedProfiles == null || selectedProfiles.isEmpty()) {
 			System.out.println("Error: Los perfiles no se han cargado en el GameController.");
@@ -167,7 +187,8 @@ public class GameController {
 		actualGame.setState(State.IN_GAME);
 
 		// Creamos el juego en la base de datos
-		gameDAO.addGame(actualGame);
+		int idGame = gameDAO.addGame(actualGame);
+		actualGame.setIdGame(idGame);
 
 		// Creamos las celdas
 		cells = cellDAO.getAll();
@@ -183,11 +204,13 @@ public class GameController {
 		selectedTokens.clear();
 		for (Profile profile : selectedProfiles) {
 			seleccionarFichaJugador();
-			// initPlayers();
 		}
 
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void initPlayers() {
 		for (int i = 0; i < selectedProfiles.size(); i++) {
 			Player player = new Player();
@@ -207,16 +230,20 @@ public class GameController {
 			player.setJailTurnsLeft(0);
 			player.setToken(selectedTokens.get(i));
 
-			allPlayers.add(player);
-
 			// Creamos el jugador en la base de datos
-			playerDAO.addPlayer(player);
+			int idPlayer = playerDAO.addPlayer(player);
+			player.setIdPlayer(idPlayer);
+
+			allPlayers.add(player);
 			System.out.println("Jugador " + player.getProfile().getNickname() + " creado con éxito.");
 		}
 	}
 
 	// TODO mirar si el estado del juego no está en playing y si el isFinished es
 	// false
+	/**
+	 * @author Ana
+	 */
 	public boolean isGameFinished() {
 		return isFinished;
 	}
@@ -256,20 +283,30 @@ public class GameController {
 		});
 	}
 
-	// manejar la celda de propiedad
+	/**
+	 * @author Ana
+	 */
 	public void handlePropertyCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de propiedad.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		System.out.println("Manejando celda de propiedad...");
 		Property property = cell.getProperty();
 		if (property != null) {
+			System.out.println("Partida encontrada: " + actualGame.getIdGame());
 			boolean hasOwner = playerPropertyDAO.isPropertyOwned(property.getIdProperty(), actualGame.getIdGame());
 			int ownerId = playerPropertyDAO.getPropertyOwner(property.getIdProperty(), actualGame.getIdGame());
 			Player owner = playerDAO.findPlayerById(ownerId);
+			System.out.println("Propiedad ID: " + property.getIdProperty() + ", Tiene dueño: " + hasOwner
+					+ ", Dueño ID: " + ownerId);
 			if (!hasOwner) {
-				comprarPropiedad(property, player);
-			} else if (hasOwner && owner != null && owner.getIdPlayer() != player.getIdPlayer()) {
-				cobrarAlquiler(property, owner, player);
+				handleComprarPropiedad(property, player);
+			} else if ((hasOwner && owner != null) && owner.getIdPlayer() != player.getIdPlayer()) {
+				handleCobrarAlquiler(property, owner, player);
 			} else {
-				// TODO mirar si el jugador quiere comprar o vender, etc.
+				handleUpdateProperty(property, player);
 			}
 
 		} else {
@@ -277,41 +314,364 @@ public class GameController {
 		}
 	}
 
-	// manejar la celda de cárcel
-	public void handleJailCell(Player player) {
-		System.out.println("Manejando celda de cárcel...");
-		player.setJailTurnsLeft(3);
+	/**
+	 * @author Ana
+	 */
+	public void handleComprarPropiedad(Property property, Player player) {
+		centerPane.getChildren().clear();
+
+		ImageView imgProperty = new ImageView();
+		String resourcePath = MessageFormat.format(PROPERTY_IMAGE, property.getIdProperty());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		if (resourceUrl != null) {
+			imgProperty.setImage(new Image(resourceUrl.toString()));
+			imgProperty.setFitWidth(170);
+			imgProperty.setFitHeight(235);
+			imgProperty.setLayoutX(80);
+			imgProperty.setLayoutY(27);
+		}
+
+		Button btnBuy = new Button();
+		btnBuy.setText("Comprar propiedad");
+		btnBuy.setLayoutX(34);
+		btnBuy.setLayoutY(283);
+		btnBuy.setOnAction(e -> {
+			comprarPropiedad(property, player);
+		});
+
+		Button btnCancel = new Button();
+		btnCancel.setText("Terminar turno");
+		btnCancel.setLayoutX(175);
+		btnCancel.setLayoutY(283);
+		btnCancel.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(imgProperty, btnBuy, btnCancel);
+
 	}
 
-	// manejar la celda de suerte
+	/**
+	 * @author Ana
+	 */
+	public void handleCobrarAlquiler(Property property, Player owner, Player player) {
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("Tienes que pagarle x al propietario x");
+		lblInfo.setLayoutX(69);
+		lblInfo.setLayoutY(48);
+		lblInfo.setMaxWidth(273);
+		lblInfo.setWrapText(true);
+
+		// TODO terminar porque tengo que coger el alquiler de la propiedad
+		cobrarAlquiler(property, owner, player);
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setLayoutX(117);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleUpdateProperty(Property property, Player actualPlayer) {
+		centerPane.getChildren().clear();
+
+		ImageView imgProperty = new ImageView();
+		String resourcePath = MessageFormat.format(PROPERTY_IMAGE, property.getIdProperty());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		if (resourceUrl != null) {
+			imgProperty.setImage(new Image(resourceUrl.toString()));
+			imgProperty.setFitWidth(170);
+			imgProperty.setFitHeight(235);
+			imgProperty.setLayoutX(20);
+			imgProperty.setLayoutY(26);
+		}
+
+		Label lblEpisodios = new Label();
+		lblEpisodios.setText("Número de episodios:");
+		lblEpisodios.setPrefWidth(117);
+		lblEpisodios.setPrefHeight(17);
+		lblEpisodios.setLayoutX(194);
+		lblEpisodios.setLayoutY(9);
+
+		HBox hbEpisodios = new HBox();
+		hbEpisodios.setSpacing(5);
+		hbEpisodios.setLayoutX(194);
+		hbEpisodios.setLayoutY(27);
+		hbEpisodios.setPrefWidth(122);
+		hbEpisodios.setPrefHeight(31);
+		hbEpisodios.getChildren().clear();
+		for (int i = 0; i < property.getHouseNumber(); i++) {
+			ImageView houseView = new ImageView(new Image("images/episode.png"));
+			houseView.setFitWidth(30);
+			houseView.setFitHeight(30);
+			hbEpisodios.getChildren().add(houseView);
+		}
+
+		Label lblTemporadas = new Label();
+		lblTemporadas.setText("Número de episodios:");
+		lblTemporadas.setPrefWidth(125);
+		lblTemporadas.setPrefHeight(17);
+		lblTemporadas.setLayoutX(194);
+		lblTemporadas.setLayoutY(63);
+
+		HBox hbTemporada = new HBox();
+		hbTemporada.setSpacing(5);
+		hbTemporada.setLayoutX(194);
+		hbTemporada.setLayoutY(81);
+		hbTemporada.setPrefWidth(122);
+		hbTemporada.setPrefHeight(31);
+		hbTemporada.getChildren().clear();
+		for (int i = 0; i < property.getHotelNumber(); i++) {
+			ImageView hotelView = new ImageView(new Image("images/season.png"));
+			hotelView.setFitWidth(24);
+			hotelView.setFitHeight(24);
+			hbTemporada.getChildren().add(hotelView);
+		}
+
+		Button btnComprarCasa = new Button();
+		btnComprarCasa.setText("Comprar episodio");
+		btnComprarCasa.setLayoutX(194);
+		btnComprarCasa.setLayoutY(120);
+		btnComprarCasa.setOnAction(e -> {
+			comprarCasa(property, actualPlayer);
+		});
+
+		Button btnComprarHotel = new Button();
+		btnComprarHotel.setText("Comprar temporada");
+		btnComprarHotel.setLayoutX(194);
+		btnComprarHotel.setLayoutY(197);
+		btnComprarHotel.setOnAction(e -> {
+			comprarHotel(property, actualPlayer);
+		});
+
+		Button btnVenderCasa = new Button();
+		btnVenderCasa.setText("Vender episodio");
+		btnVenderCasa.setLayoutX(194);
+		btnVenderCasa.setLayoutY(158);
+		btnVenderCasa.setOnAction(e -> {
+			venderCasa(property, actualPlayer);
+		});
+
+		Button btnVenderHotel = new Button();
+		btnVenderHotel.setText("Vender temporada");
+		btnVenderHotel.setLayoutX(194);
+		btnVenderHotel.setLayoutY(236);
+		btnVenderHotel.setOnAction(e -> {
+			venderHotel(property, actualPlayer);
+		});
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setLayoutX(117);
+		btnTerminarTurno.setLayoutY(283);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+		centerPane.getChildren().addAll(imgProperty, lblEpisodios, hbEpisodios, lblTemporadas, hbTemporada,
+				btnComprarCasa, btnComprarHotel, btnVenderCasa, btnVenderHotel, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleJailCell(Player player) {
+		lblAction.setText("Has caído en una celda de cárcel.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de cárcel...");
+		player.setJailTurnsLeft(3);
+
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("¡Oh no, has caído en la cárcel!");
+		lblInfo.setLayoutX(85);
+		lblInfo.setLayoutY(49);
+
+		ImageView imgCarcel = new ImageView();
+		imgCarcel.setImage(new Image("/images/cells/jail.jpg"));
+		imgCarcel.setFitWidth(110);
+		imgCarcel.setFitHeight(110);
+		imgCarcel.setLayoutX(106);
+		imgCarcel.setLayoutY(107);
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setLayoutX(117);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(lblInfo, imgCarcel, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
 	public void handleLuckCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de carta de suerte.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		System.out.println("Manejando celda de suerte...");
 		Card luckyCard = getRandomCard(CardType.LUCK);
+		System.out.println("Carta de suerte obtenida: " + luckyCard.getIdCard());
 		List<Card> cards = player.getCards();
 		cards.add(luckyCard);
 		player.setCards(cards);
+
+		centerPane.getChildren().clear();
+
+		ImageView imgLuck = new ImageView();
+		String resourcePath = MessageFormat.format(LUCK_IMAGE, luckyCard.getIdCard());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		System.out.println("Buscando recurso en: " + resourcePath);
+		System.out.println("URL recurso: " + resourceUrl);
+		if (resourceUrl != null) {
+			imgLuck.setImage(new Image(resourceUrl.toString()));
+			imgLuck.setFitWidth(238);
+			imgLuck.setFitHeight(159);
+			imgLuck.setLayoutX(47);
+			imgLuck.setLayoutY(52);
+		}
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Ejecutar acción y terminar turno");
+		btnTerminarTurno.setLayoutX(73);
+		btnTerminarTurno.setLayoutY(253);
+		btnTerminarTurno.setOnAction(e -> {
+			// TODO implementar la acción de la carta de suerte
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(imgLuck, btnTerminarTurno);
 	}
 
-	// manejar la celda de cofre comunidad
+	/**
+	 * @author Ana
+	 */
 	public void handleCommunityChestCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de cofre de comunidad.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		System.out.println("Manejando celda de cofre comunitario...");
 		Card chestCard = getRandomCard(CardType.LUCK);
+		System.out.println("Carta de cofre obtenida: " + chestCard.getIdCard());
 		List<Card> cards = player.getCards();
 		cards.add(chestCard);
 		player.setCards(cards);
+
+		centerPane.getChildren().clear();
+
+		ImageView imgChest = new ImageView();
+		String resourcePath = MessageFormat.format(CHEST_IMAGE, chestCard.getIdCard());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		if (resourceUrl != null) {
+			imgChest.setImage(new Image(resourceUrl.toString()));
+			imgChest.setFitWidth(238);
+			imgChest.setFitHeight(159);
+			imgChest.setLayoutX(47);
+			imgChest.setLayoutY(52);
+		}
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Ejecutar acción y terminar turno");
+		btnTerminarTurno.setLayoutX(73);
+		btnTerminarTurno.setLayoutY(253);
+		btnTerminarTurno.setOnAction(e -> {
+			// TODO implementar la acción de la carta de cofre comunitario
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(imgChest, btnTerminarTurno);
 	}
 
-	// manejar la celda de salida
+	/**
+	 * @author Ana
+	 */
 	public void handleStartCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en la celda de salida.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		System.out.println("Manejando celda de salida...");
 		int startMoney = 200;
 		int actualMoney = player.getMoney();
 		int addedMoney = actualMoney + startMoney;
 		player.setMoney(addedMoney);
+
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("Has pasado por la salida y has recibido " + startMoney + " dólares.");
+		lblInfo.setLayoutX(28);
+		lblInfo.setLayoutY(102);
+		lblInfo.setMaxWidth(273);
+		lblInfo.setWrapText(true);
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setLayoutX(117);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
 	}
 
-	// manejar la celda de impuestos
+	/**
+	 * @author Ana
+	 */
 	public void handleTaxCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de impuestos.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Double.MAX_VALUE / 5);
+		lblAction.setWrapText(true);
+
 		System.out.println("Manejando celda de impuestos...");
 		int taxAmount = 200;
 		int actualMoney = player.getMoney();
@@ -321,39 +681,60 @@ public class GameController {
 		} else {
 			player.setBankrupt(true);
 		}
+
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("Has caído en la celda de impuestos y has pagado " + taxAmount
+				+ " dólares para poder hacer el rodaje de tu serie favorita.");
+		lblInfo.setLayoutX(28);
+		lblInfo.setLayoutY(102);
+		lblInfo.setMaxWidth(273);
+		lblInfo.setWrapText(true);
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setLayoutX(117);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
 	}
 
-	// TODO Lógica para obtener una carta aleatoria
+	/**
+	 * @author Ana
+	 */
 	public Card getRandomCard(CardType cardType) {
-		// Conseguimos todas las cartas de la base de datos
-		// Conseguimos un número aleatorio entre 0 y el número de cartas
-		// Devolvemos la carta
-		return new Card();
+		Card card = new Card();
+		if (cardType == CardType.LUCK) {
+			int randomId = (int) (Math.random() * (NUM_CARD_FINISH_LUCK - NUM_CARD_INIT_LUCK + 1)) + NUM_CARD_INIT_LUCK;
+			System.out.println("Random ID for luck card: " + randomId);
+			card = cardDAO.findCardById(randomId);
+		} else if (cardType == CardType.COMMUNITY_CHEST) {
+			int randomId = (int) (Math.random() * (NUM_CARD_FINISH_CHEST - NUM_CARD_INIT_CHEST + 1))
+					+ NUM_CARD_INIT_CHEST;
+			System.out.println("Random ID for chest card: " + randomId);
+			card = cardDAO.findCardById(randomId);
+		}
+		return card;
 	}
 
-	// TODO
-	// Métodos de carga de cartas (simulados)
-	private List<Card> loadCards() {
-		return new ArrayList<>(); // Placeholder implementation
-	}
-
-	private List<Card> loadChestCards() {
-		return new ArrayList<>(); // Placeholder implementation
-	}
-
-	private List<Card> loadLuckyCards() {
-		return new ArrayList<>(); // Placeholder implementation
-	}
-
-	private List<Card> loadPropertiesCards() {
-		return new ArrayList<>(); // Placeholder implementation
-	}
-
-	private List<Card> loadLuckyChestCards() {
-		return new ArrayList<>(); // Placeholder implementation
-	}
-
+	/**
+	 * @author Ana
+	 */
 	private void seleccionarFichaJugador() {
+		lblAction.setText(
+				"Selecciona una ficha para el jugador: " + selectedProfiles.get(currentProfileIndex).getNickname());
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		ScrollPane scrollPane = new ScrollPane();
 		scrollPane.setFitToWidth(true);
 		scrollPane.setFitToHeight(true);
@@ -389,7 +770,16 @@ public class GameController {
 		scrollPane.setContent(tilePane);
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void mostrarPanelOrdenDeTurno() {
+		lblAction.setText("Lanza los dados para determinar el orden de turno. Jugador actual: "
+				+ selectedProfiles.get(0).getNickname());
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		VBox vbox = new VBox(20);
 		vbox.setAlignment(Pos.CENTER);
 
@@ -441,6 +831,9 @@ public class GameController {
 		avanzarTurnoLanzamiento();
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void avanzarTurnoLanzamiento() {
 		if (currentProfileIndex >= selectedProfiles.size()) {
 			if (faseInicial) {
@@ -458,6 +851,9 @@ public class GameController {
 		imgPlayerPhoto.setImage(new Image(jugador.getImage()));
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void determinarOrdenTurno() {
 		List<Profile> ordenFinal = selectedProfiles.stream().filter(p -> tiradasPorJugador.containsKey(p))
 				.sorted(Comparator.comparingInt(p -> tiradasPorJugador.get(p)).reversed()).collect(Collectors.toList());
@@ -472,11 +868,26 @@ public class GameController {
 			}
 		}
 
+		playerOrderContainer.getChildren().clear();
+		playerLabels.clear();
+		for (int i = 0; i < orderTurn.size(); i++) {
+			Player player = orderTurn.get(i);
+			String labelText = String.format("Turno %d: %s - %d$", i + 1, player.getProfile().getNickname(),
+					player.getMoney());
+			Label label = new Label(labelText);
+			label.setStyle("-fx-font-size: 14px; -fx-padding: 5 0 5 0;"); // Estilo opcional
+			playerOrderContainer.getChildren().add(label);
+			playerLabels.add(label);
+		}
+
 		faseInicial = false;
 		currentProfileIndex = 0;
 		startGame();
 	}
 
+	/**
+	 * @author Ana
+	 */
 	@FXML
 	public void rollDice() {
 		Random random = new Random();
@@ -537,16 +948,46 @@ public class GameController {
 		thread.start();
 	}
 
+	/**
+	 * @author Ana
+	 */
 	public void startGame() {
 		turnIndex = 0;
 		startTurn();
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void startTurn() {
 		Player currentPlayer = orderTurn.get(turnIndex);
 		mostrarPanelTurnoJugador(currentPlayer.getProfile());
 	}
 
+	/**
+	 * @author Ana
+	 */
+	private void actualizarResaltadoJugador(Player actualPlayer) {
+		for (int i = 0; i < orderTurn.size(); i++) {
+			Player player = orderTurn.get(i);
+			Label label = playerLabels.get(i);
+			if (player.equals(actualPlayer)) {
+				label.setStyle(
+						"-fx-font-size: 14px; -fx-font-weight: bold; -fx-background-color: #d0f0c0; -fx-padding: 5 0 5 0;");
+			} else {
+				label.setStyle("-fx-font-size: 14px; -fx-padding: 5 0 5 0;");
+			}
+
+			// Actualiza el texto por si el dinero cambió
+			String labelText = String.format("Turno %d: %s - %d€", i + 1, player.getProfile().getNickname(),
+					player.getMoney());
+			label.setText(labelText);
+		}
+	}
+
+	/**
+	 * @author Ana
+	 */
 	private void mostrarPanelTurnoJugador(Profile perfilJugador) {
 		VBox vbox = new VBox(20);
 		vbox.setAlignment(Pos.CENTER);
@@ -571,7 +1012,6 @@ public class GameController {
 			resultadoCallback = resultado -> {
 				int dado1 = resultado.getDado1();
 				int dado2 = resultado.getDado2();
-				int total = dado1 + dado2;
 
 				Player actualPlayer = orderTurn.get(turnIndex);
 
@@ -612,15 +1052,25 @@ public class GameController {
 		centerPane.getChildren().add(vbox);
 	}
 
+	/**
+	 * @author Ana
+	 */
 	public void ejecutarMovimiento(Player actualPlayer, int dado1, int dado2) {
 		if (isGameFinished()) {
 			System.out.println("El juego ha terminado. No se puede ejecutar el movimiento.");
 			// mostrarMensajeJuegoTerminado();
 		}
 
+		actualizarResaltadoJugador(actualPlayer);
+
 		System.out.println("Turno del jugador " + actualPlayer.getProfile().getNickname());
 		// Verificamos si el jugador está en la cárcel
 		if (actualPlayer.getJailTurnsLeft() != 0) {
+			lblAction.setText(
+					"El jugador " + actualPlayer.getProfile().getNickname() + " está en la cárcel y no puede moverse.");
+			lblAction.setPrefWidth(169);
+			lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+			lblAction.setWrapText(true);
 			if (dado1 == dado2) {
 				// Si el jugador ha sacado dobles, lanza el dado de nuevo
 				actualPlayer.setJailTurnsLeft(0);
@@ -650,7 +1100,6 @@ public class GameController {
 			System.out.println("Celda actual: " + actualCellNumber + ", dados: " + dado1 + " + " + dado2);
 			int nextCellNumber = (actualCellNumber + dado1 + dado2) % TOTAL_NUM_CELLS;
 			System.out.println("Moviendo a la celda con ID: " + nextCellNumber);
-			// TODO coger la celda de la base de datos
 			Cell newCell = cellDAO.findCellById(nextCellNumber);
 			actualPlayer.setCell(newCell);
 			switch (newCell.getType()) {
@@ -676,9 +1125,17 @@ public class GameController {
 				break;
 			}
 
-			// TODO mirar si el jugador ha ganado o no
+			// mirar si el jugador ha ganado o no
+			if (isGameFinished()) {
+				System.out.println("El juego ha terminado. No se puede continuar el turno.");
+				// mostrarMensajeJuegoTerminado();
+				return;
+			}
 
-			// TODO Actualizamos el estado del jugador
+			// Actualizamos el estado del jugador
+			playerDAO.updatePlayer(actualPlayer);
+
+			actualizarResaltadoJugador(actualPlayer);
 		}
 	}
 
@@ -699,6 +1156,8 @@ public class GameController {
 				List<Property> properties = player.getProperties();
 				properties.add(property);
 				player.setProperties(properties);
+				System.out.println(
+						"Propiedad comprada: " + property.getIdProperty() + " por el jugador: " + player.getIdPlayer());
 				playerPropertyDAO.addPlayerProperty(
 						new PlayerProperty(player.getIdPlayer(), property.getIdProperty(), actualGame.getIdGame()));
 			} else {
@@ -709,19 +1168,81 @@ public class GameController {
 		}
 	}
 
-	// TODO implementar la venta de la propiedad
+	/**
+	 * @author Ana
+	 */
 	public void venderPropiedad(Property property, Player seller, Player buyer) {
 		System.out.println("Vendiendo propiedad...");
 
+		// Verificar que el vendedor es el dueño
+		boolean esDueno = playerPropertyDAO.getPropertyOwner(property.getIdProperty(), actualGame.getIdGame()) == seller
+				.getIdPlayer();
+		if (!esDueno) {
+			System.out.println("Error: el vendedor no es dueño de esta propiedad.");
+			return;
+		}
+
+		int valorVenta = property.getSellValue();
+		int dineroComprador = buyer.getMoney();
+
+		if (dineroComprador < valorVenta) {
+			System.out.println("El comprador no tiene suficiente dinero para la compra.");
+			buyer.setBankrupt(true);
+			return;
+		}
+
+		// Realizar la transacción económica
+		buyer.setMoney(dineroComprador - valorVenta);
+		seller.setMoney(seller.getMoney() + valorVenta);
+
+		// Actualizar propiedad del comprador y eliminarla del vendedor
+		playerPropertyDAO.deletePlayerProperty(property.getIdProperty(), seller.getIdPlayer(), actualGame.getIdGame());
+		playerPropertyDAO.addPlayerProperty(
+				new PlayerProperty(buyer.getIdPlayer(), property.getIdProperty(), actualGame.getIdGame()));
+
+		// Actualizar listas en memoria
+		seller.getProperties().remove(property);
+		buyer.getProperties().add(property);
+
+		System.out.println("Propiedad vendida correctamente de " + seller.getProfile().getNickname() + " a "
+				+ buyer.getProfile().getNickname() + " por " + valorVenta + "€.");
 	}
 
 	/**
 	 * @author Ana
 	 */
-	// implementar la compra del hotel
-	// TODO pensar en si se necesita poner la implementación del bot,
-	// si eres bot, compras o mirar como coño hacerlo
+	public void comprarCasa(Property property, Player player) {
+		lblAction.setText("Has caído en una celda de propiedad. Puedes comprarla");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		if (property.getHouseNumber() >= 3 && property.getHotelNumber() <= 1) {
+			System.out.println("Comprando casa...");
+			int houseValue = property.getHouseBuyValue();
+			int actualMoney = player.getMoney();
+			if (checkIfPlayerCanPurchase(actualMoney, houseValue)) {
+				int substractedMoney = actualMoney - houseValue;
+				player.setMoney(substractedMoney);
+				int houseNumber = property.getHouseNumber();
+				property.setHouseNumber(houseNumber + 1);
+			} else {
+				player.setBankrupt(true);
+			}
+		} else {
+			System.out.println("Error, no tiene suficientes casas o ya tiene un hotel comprado");
+		}
+	}
+
+	/**
+	 * @author Ana
+	 */
 	public void comprarHotel(Property property, Player player) {
+		lblAction.setText("Has caído en una celda de tu propiedad. Puedes comprar un hotel si tienes 3 casas.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		if (property.getHouseNumber() == 2 || property.getHotelNumber() < 1) {
 			System.out.println("Comprando hotel...");
 			int hotelValue = property.getHotelBuyValue();
@@ -742,8 +1263,41 @@ public class GameController {
 	 * 
 	 * @author Ana
 	 */
+	public void venderCasa(Property property, Player player) {
+		lblAction.setText("Has caído en una celda de tu propiedad. Puedes vender una casa si tienes al menos 1 casa.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		if ((property.getHouseNumber() >= 1 && property.getHouseNumber() <= 3) && property.getHotelNumber() == 0) {
+			System.out.println("Vendiendo casa...");
+			int houseValue = property.getHouseBuyValue();
+			int actualMoney = player.getMoney();
+			if (!player.getIsBankrupt()) {
+				int addedMoney = actualMoney + houseValue;
+				player.setMoney(addedMoney);
+				int houseNumber = property.getHouseNumber();
+				property.setHouseNumber(houseNumber - 1);
+			} else {
+				System.out.println("Estás en bancarrota, ya no puedes jugar");
+			}
+		} else {
+			System.out.println(
+					"Error, no puedes vender la casa porque no tienes al menos una casa o tienes un hotel comprado");
+		}
+	}
+
+	/**
+	 * 
+	 * @author Ana
+	 */
 	// implementar la venta del hotel
 	public void venderHotel(Property property, Player player) {
+		lblAction.setText("Has caído en una celda de tu propiedad. Puedes vender un hotel si tienes 1 hotel.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		if (property.getHotelNumber() == 1) {
 			System.out.println("Vendiendo hotel...");
 			int hotelValue = property.getHotelBuyValue();
@@ -760,20 +1314,16 @@ public class GameController {
 		}
 	}
 
-	// TODO mirar si estos métodos son necesarios
-	public void comprarBot() {
-		System.out.println("Bot comprando propiedad...");
-	}
-
-	// TODO mirar si estos métodos son necesarios
-	public void noComprarBot() {
-		System.out.println("Bot no puede comprar propiedad...");
-	}
-
 	/**
 	 * @author Ana
 	 */
 	public void cobrarAlquiler(Property property, Player owner, Player renter) {
+		lblAction.setText("Has caído en una celda de propiedad. El dueño es: " + owner.getProfile().getNickname()
+				+ ". Se cobrará el alquiler correspondiente.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
 		System.out.println("Cobrando alquiler...");
 		int rent = 0;
 		if (property.getHouseNumber() == 0 || property.getHotelNumber() == 0) {
@@ -810,9 +1360,6 @@ public class GameController {
 			System.out.println("El jugador " + renter.getProfile().getNickname() + " está en bancarrota.");
 		}
 	}
-
-	// TODO cambiar los parámetros y nombres para que se ponga con los nombres
-	// correspondientes
 
 	/**
 	 * @author Ana

@@ -47,15 +47,10 @@ public class ListProfilesController {
 
 	private String selectedImagePath;
 
-	private static Scene previousScene;
 	private static DAOManager daoManager = new DAOManager();
 	private static ProfileDAO profileDAO = daoManager.getProfileDAO();
 	private boolean isNewGame;
 	private List<Profile> selectedProfiles = new ArrayList<Profile>();
-
-	public static void setPreviousScene(Scene scene) {
-		previousScene = scene;
-	}
 
 	public void setNewGame(boolean isNewGame) {
 		this.isNewGame = isNewGame;
