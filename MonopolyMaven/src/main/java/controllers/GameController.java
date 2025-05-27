@@ -35,6 +35,11 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -42,6 +47,7 @@ import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import models.Action;
 import models.Board;
 import models.Card;
 import models.Card.CardType;
@@ -62,9 +68,7 @@ public class GameController {
 	// TODO implementar el que se muevan las fichas
 	// TODO implementar que se vea mejor la tirada de los dados
 	// TODO terminar el tablero
-	// TODO hacer el fin del juego
 	// TODO hacer el mensaje del fin del juego
-	// TODO coger el mensaje de alquiler y hacerlo bien
 	// TODO mirar el dado doble
 	// TODO ordenar todo
 	// TODO si da tiempo cambiar las variables a ingles
@@ -179,7 +183,6 @@ public class GameController {
 				System.out.println("Perfil: " + profile.getNickname());
 			}
 		}
-		// centerPane.setVisible(false);
 
 		// Creamos el juego
 		actualGame = new Game();
@@ -205,6 +208,12 @@ public class GameController {
 		for (Profile profile : selectedProfiles) {
 			seleccionarFichaJugador();
 		}
+
+		Image image = new Image(getClass().getResource("/images/board/tablero.png").toExternalForm());
+		BackgroundImage backgroundImage = new BackgroundImage(image, BackgroundRepeat.NO_REPEAT,
+				BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
+				new BackgroundSize(100, 100, true, true, true, false));
+		board_game.setBackground(new Background(backgroundImage));
 
 	}
 
@@ -239,13 +248,22 @@ public class GameController {
 		}
 	}
 
-	// TODO mirar si el estado del juego no está en playing y si el isFinished es
-	// false
 	/**
 	 * @author Ana
 	 */
 	public boolean isGameFinished() {
-		return isFinished;
+		if (isFinished) {
+			return true;
+		}
+
+		int activePlayers = 0;
+		for (Player player : orderTurn) {
+			if (!player.getIsBankrupt()) {
+				activePlayers++;
+			}
+		}
+
+		return activePlayers <= 1;
 	}
 
 	@FXML
@@ -281,6 +299,71 @@ public class GameController {
 				System.exit(0);
 			}
 		});
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void executeAction(Action action, Player player) {
+		String type = action.getActionType().name();
+		int value = action.getTimes();
+
+		switch (type) {
+		case "PAY":
+			player.setMoney(player.getMoney() - value);
+			break;
+
+		case "RECIEVE":
+			player.setMoney(player.getMoney() + value);
+			break;
+
+		case "PAY_PLAYERS":
+			for (Player other : orderTurn) {
+				if (!other.equals(player) && !other.getIsBankrupt()) {
+					player.setMoney(player.getMoney() - value);
+					other.setMoney(other.getMoney() + value);
+				}
+			}
+			break;
+
+		case "RECIEVE_PLAYERS":
+			for (Player other : orderTurn) {
+				if (!other.equals(player) && !other.getIsBankrupt()) {
+					other.setMoney(other.getMoney() - value);
+					player.setMoney(player.getMoney() + value);
+				}
+			}
+			break;
+
+		case "EXIT_JAIL":
+			player.setJailTurnsLeft(0); // Suponiendo que hay un campo de cárcel
+			break;
+
+		case "ROLL_DICE":
+//			int dice = rollDice(); // Suponiendo que tienes este método
+//			movePlayer(player, dice); // Y este también
+			break;
+
+		case "GO_BACK_CELLS":
+//			movePlayer(player, -value);
+			break;
+
+		case "MOVE_CELLS":
+//			movePlayer(player, value);
+			break;
+
+		case "SUM_DICE":
+//			player.addToNextRoll(value); // O alguna lógica equivalente
+			break;
+
+		case "GO_EXIT":
+//			movePlayerToExit(player); // Define esta función según la casilla de salida
+			break;
+
+		default:
+			System.out.println("Acción desconocida: " + type);
+			break;
+		}
 	}
 
 	/**
@@ -361,15 +444,14 @@ public class GameController {
 	public void handleCobrarAlquiler(Property property, Player owner, Player player) {
 		centerPane.getChildren().clear();
 
+		int alquiler = cobrarAlquiler(property, owner, player);
+
 		Label lblInfo = new Label();
-		lblInfo.setText("Tienes que pagarle x al propietario x");
+		lblInfo.setText("Tienes que pagarle " + alquiler + " al propietario " + owner.getProfile().getNickname());
 		lblInfo.setLayoutX(69);
 		lblInfo.setLayoutY(48);
 		lblInfo.setMaxWidth(273);
 		lblInfo.setWrapText(true);
-
-		// TODO terminar porque tengo que coger el alquiler de la propiedad
-		cobrarAlquiler(property, owner, player);
 
 		Button btnTerminarTurno = new Button();
 		btnTerminarTurno.setText("Terminar turno");
@@ -1317,7 +1399,7 @@ public class GameController {
 	/**
 	 * @author Ana
 	 */
-	public void cobrarAlquiler(Property property, Player owner, Player renter) {
+	public int cobrarAlquiler(Property property, Player owner, Player renter) {
 		lblAction.setText("Has caído en una celda de propiedad. El dueño es: " + owner.getProfile().getNickname()
 				+ ". Se cobrará el alquiler correspondiente.");
 		lblAction.setPrefWidth(169);
@@ -1359,6 +1441,7 @@ public class GameController {
 			renter.setBankrupt(true);
 			System.out.println("El jugador " + renter.getProfile().getNickname() + " está en bancarrota.");
 		}
+		return rent;
 	}
 
 	/**
