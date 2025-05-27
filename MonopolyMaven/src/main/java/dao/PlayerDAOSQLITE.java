@@ -173,18 +173,23 @@ public class PlayerDAOSQLITE implements PlayerDAO {
 			PlayerCardDAO cardDAO = daoManager.getPlayerCardDAO();
 			PlayerPropertyDAO propertyDAO = daoManager.getPlayerPropertyDAO();
 
-			cardDAO.deletePlayerCard(player.getIdPlayer(), player.getGame().getIdGame(),
-					player.getCards().get(0).getIdCard());
-			for (Card card : player.getCards()) {
-				cardDAO.addPlayerCard(
-						new PlayerCard(player.getIdPlayer(), card.getIdCard(), player.getGame().getIdGame()));
+			if (!player.getCards().isEmpty()) {
+				cardDAO.deletePlayerCard(player.getIdPlayer(), player.getGame().getIdGame(),
+						player.getCards().get(0).getIdCard());
+				for (Card card : player.getCards()) {
+					cardDAO.addPlayerCard(
+							new PlayerCard(player.getIdPlayer(), card.getIdCard(), player.getGame().getIdGame()));
+				}
 			}
 
-			propertyDAO.deletePlayerProperty(player.getIdPlayer(), player.getGame().getIdGame(),
-					player.getProperties().get(0).getIdProperty());
-			for (Property property : player.getProperties()) {
-				propertyDAO.addPlayerProperty(new PlayerProperty(player.getIdPlayer(), property.getIdProperty(),
-						player.getGame().getIdGame()));
+			// Solo borrar si hay propiedades
+			if (!player.getProperties().isEmpty()) {
+				propertyDAO.deletePlayerProperty(player.getIdPlayer(), player.getGame().getIdGame(),
+						player.getProperties().get(0).getIdProperty());
+				for (Property property : player.getProperties()) {
+					propertyDAO.addPlayerProperty(new PlayerProperty(player.getIdPlayer(), property.getIdProperty(),
+							player.getGame().getIdGame()));
+				}
 			}
 
 		} catch (SQLException e) {

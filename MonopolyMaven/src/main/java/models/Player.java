@@ -2,6 +2,8 @@ package models;
 
 import java.util.List;
 
+import javafx.scene.image.ImageView;
+
 /**
  * @author Ana
  */
@@ -17,6 +19,7 @@ public class Player {
 	public boolean isBankrupt;
 	public int jailTurnsLeft;
 	public String token;
+	public ImageView imgToken;
 
 	public Player(int idPlayer, Profile profile, Cell cell, int money, List<Card> cards, List<Property> properties,
 			Game game, boolean isBankrupt, int jailTurnsLeft) {
@@ -113,6 +116,14 @@ public class Player {
 
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	public ImageView getImgToken() {
+		return imgToken;
+	}
+
+	public void setImgToken(ImageView imgToken) {
+		this.imgToken = imgToken;
 	}
 
 }

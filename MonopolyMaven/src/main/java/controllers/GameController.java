@@ -22,6 +22,7 @@ import dao.PlayerPropertyDAO;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Parent;
@@ -64,13 +65,10 @@ import models.TiradaResultado;
 
 public class GameController {
 
-	// TODO implementar las acciones
 	// TODO implementar el que se muevan las fichas
-	// TODO implementar que se vea mejor la tirada de los dados
-	// TODO terminar el tablero
-	// TODO hacer el mensaje del fin del juego
 	// TODO mirar el dado doble
 	// TODO ordenar todo
+	// TODO hacer que se vea el tablero y el panel del centro bien
 	// TODO si da tiempo cambiar las variables a ingles
 
 	public static final String[] TOKENS_IMAGES = { "/images/tokens/gema.png", "/images/tokens/mascara.png",
@@ -141,6 +139,8 @@ public class GameController {
 	private Map<Profile, Integer> tiradasPorJugador = new HashMap<>();
 	private Consumer<TiradaResultado> resultadoCallback;
 	private List<Label> playerLabels = new ArrayList<>();
+	private List<Point2D> borde = new ArrayList<>();
+	private Map<Point2D, Cell> mapaCeldaPorCoordenada = null;
 
 	// DAOs
 	private DAOManager daoManager = new DAOManager();
@@ -202,6 +202,7 @@ public class GameController {
 
 		// Cremos el tablero
 		board = new Board(1, cells);
+		initBoard();
 
 		// Iniciar selección de tokens uno a uno
 		selectedTokens.clear();
@@ -215,6 +216,31 @@ public class GameController {
 				new BackgroundSize(100, 100, true, true, true, false));
 		board_game.setBackground(new Background(backgroundImage));
 
+	}
+
+	private void initBoard() {
+		// Fila superior
+		for (int col = 0; col < 11; col++) {
+			borde.add(new Point2D(0, col));
+		}
+		// Columna derecha (sin esquinas)
+		for (int row = 1; row < 11 - 1; row++) {
+			borde.add(new Point2D(row, 11 - 1));
+		}
+		// Fila inferior
+		for (int col = 11 - 1; col >= 0; col--) {
+			borde.add(new Point2D(11 - 1, col));
+		}
+		// Columna izquierda (sin esquinas)
+		for (int row = 11 - 2; row > 0; row--) {
+			borde.add(new Point2D(row, 0));
+		}
+
+		mapaCeldaPorCoordenada = new HashMap<>();
+
+		for (int i = 0; i < borde.size(); i++) {
+			mapaCeldaPorCoordenada.put(borde.get(i), cells.get(i));
+		}
 	}
 
 	/**
@@ -231,13 +257,21 @@ public class GameController {
 					break;
 				}
 			}
+
+			Cell startCell = cellDAO.findCellById(1);
+
 			player.setMoney(1500);
 			player.setCards(new ArrayList<Card>());
 			player.setProperties(new ArrayList<Property>());
 			player.setGame(actualGame);
 			player.setBankrupt(false);
 			player.setJailTurnsLeft(0);
+			player.setCell(startCell);
 			player.setToken(selectedTokens.get(i));
+			ImageView ficha = new ImageView(new Image(player.getToken()));
+			ficha.setFitWidth(20);
+			ficha.setFitHeight(20);
+			player.setImgToken(ficha);
 
 			// Creamos el jugador en la base de datos
 			int idPlayer = playerDAO.addPlayer(player);
@@ -312,11 +346,9 @@ public class GameController {
 		case "PAY":
 			player.setMoney(player.getMoney() - value);
 			break;
-
 		case "RECIEVE":
 			player.setMoney(player.getMoney() + value);
 			break;
-
 		case "PAY_PLAYERS":
 			for (Player other : orderTurn) {
 				if (!other.equals(player) && !other.getIsBankrupt()) {
@@ -325,7 +357,6 @@ public class GameController {
 				}
 			}
 			break;
-
 		case "RECIEVE_PLAYERS":
 			for (Player other : orderTurn) {
 				if (!other.equals(player) && !other.getIsBankrupt()) {
@@ -334,32 +365,37 @@ public class GameController {
 				}
 			}
 			break;
-
 		case "EXIT_JAIL":
-			player.setJailTurnsLeft(0); // Suponiendo que hay un campo de cárcel
+			player.setJailTurnsLeft(0);
 			break;
-
 		case "ROLL_DICE":
-//			int dice = rollDice(); // Suponiendo que tienes este método
-//			movePlayer(player, dice); // Y este también
+			mostrarPanelTurnoJugador(player.getProfile());
 			break;
-
 		case "GO_BACK_CELLS":
-//			movePlayer(player, -value);
+			Cell actualCell = actualPlayer.getCell();
+			int actualCellNumber = actualCell.getIdCell();
+			int nextCellNumber = (actualCellNumber - value) % TOTAL_NUM_CELLS;
+			Cell newCell = cellDAO.findCellById(nextCellNumber);
+			player.setCell(newCell);
 			break;
-
 		case "MOVE_CELLS":
-//			movePlayer(player, value);
+			actualCell = actualPlayer.getCell();
+			actualCellNumber = actualCell.getIdCell();
+			nextCellNumber = (actualCellNumber + value) % TOTAL_NUM_CELLS;
+			newCell = cellDAO.findCellById(nextCellNumber);
+			player.setCell(newCell);
 			break;
-
 		case "SUM_DICE":
-//			player.addToNextRoll(value); // O alguna lógica equivalente
+			actualCell = actualPlayer.getCell();
+			actualCellNumber = actualCell.getIdCell();
+			nextCellNumber = (actualCellNumber + value) % TOTAL_NUM_CELLS;
+			newCell = cellDAO.findCellById(nextCellNumber);
+			player.setCell(newCell);
 			break;
-
 		case "GO_EXIT":
-//			movePlayerToExit(player); // Define esta función según la casilla de salida
+			newCell = cellDAO.findCellById(1);
+			player.setCell(newCell);
 			break;
-
 		default:
 			System.out.println("Acción desconocida: " + type);
 			break;
@@ -650,7 +686,7 @@ public class GameController {
 		btnTerminarTurno.setLayoutX(73);
 		btnTerminarTurno.setLayoutY(253);
 		btnTerminarTurno.setOnAction(e -> {
-			// TODO implementar la acción de la carta de suerte
+			executeAction(luckyCard.getAction(), player);
 			turnIndex++;
 			if (turnIndex >= orderTurn.size()) {
 				turnIndex = 0;
@@ -695,7 +731,7 @@ public class GameController {
 		btnTerminarTurno.setLayoutX(73);
 		btnTerminarTurno.setLayoutY(253);
 		btnTerminarTurno.setOnAction(e -> {
-			// TODO implementar la acción de la carta de cofre comunitario
+			executeAction(chestCard.getAction(), player);
 			turnIndex++;
 			if (turnIndex >= orderTurn.size()) {
 				turnIndex = 0;
@@ -873,13 +909,20 @@ public class GameController {
 		imgPlayerPhoto.setFitHeight(55);
 
 		imageDiceFirst = new ImageView();
+		imageDiceFirst.setFitWidth(120);
+		imageDiceFirst.setFitHeight(120);
+		imageDiceFirst.setLayoutX(36);
+		imageDiceFirst.setLayoutY(85);
+
 		imageDiceSecond = new ImageView();
-		imageDiceFirst.setFitWidth(80);
-		imageDiceFirst.setPreserveRatio(true);
-		imageDiceSecond.setFitWidth(80);
-		imageDiceSecond.setPreserveRatio(true);
+		imageDiceSecond.setFitWidth(120);
+		imageDiceSecond.setFitHeight(120);
+		imageDiceSecond.setLayoutX(175);
+		imageDiceSecond.setLayoutY(85);
 
 		Button lanzarButton = new Button("Lanzar dados");
+		lanzarButton.setLayoutX(119);
+		lanzarButton.setLayoutY(250);
 		currentProfileIndex = 0;
 		lanzarButton.setOnAction(e -> {
 			lanzarButton.setDisable(true);
@@ -905,10 +948,8 @@ public class GameController {
 			rollDice();
 		});
 
-		vbox.getChildren().addAll(imageDiceFirst, imageDiceSecond, lanzarButton);
-
 		centerPane.getChildren().clear();
-		centerPane.getChildren().add(vbox);
+		centerPane.getChildren().addAll(imageDiceFirst, imageDiceSecond, lanzarButton);
 
 		avanzarTurnoLanzamiento();
 	}
@@ -1043,7 +1084,32 @@ public class GameController {
 	 */
 	private void startTurn() {
 		Player currentPlayer = orderTurn.get(turnIndex);
+		iniciarFichasJugadores();
 		mostrarPanelTurnoJugador(currentPlayer.getProfile());
+	}
+
+	private void iniciarFichasJugadores() {
+		Cell celdaSalida = cellDAO.findCellById(1);
+		Point2D coordenadas = null;
+		for (Map.Entry<Point2D, Cell> entry : mapaCeldaPorCoordenada.entrySet()) {
+			if (entry.getValue().equals(celdaSalida)) {
+				coordenadas = entry.getKey();
+				break;
+			}
+		}
+
+		if (coordenadas != null) {
+			int fila = (int) coordenadas.getX();
+			int columna = (int) coordenadas.getY();
+
+			for (Player player : orderTurn) {
+				ImageView ficha = player.getImgToken();
+				if (board_game.getChildren().contains(ficha)) {
+					board_game.getChildren().remove(ficha);
+				}
+				board_game.add(ficha, columna, fila);
+			}
+		}
 	}
 
 	/**
@@ -1071,22 +1137,26 @@ public class GameController {
 	 * @author Ana
 	 */
 	private void mostrarPanelTurnoJugador(Profile perfilJugador) {
-		VBox vbox = new VBox(20);
-		vbox.setAlignment(Pos.CENTER);
-
 		lblPlayerName.setText(perfilJugador.getNickname());
 		imgPlayerPhoto.setImage(new Image(perfilJugador.getImage()));
 		imgPlayerPhoto.setFitWidth(55);
 		imgPlayerPhoto.setFitHeight(55);
 
 		imageDiceFirst = new ImageView();
+		imageDiceFirst.setFitWidth(120);
+		imageDiceFirst.setFitHeight(120);
+		imageDiceFirst.setLayoutX(36);
+		imageDiceFirst.setLayoutY(85);
+
 		imageDiceSecond = new ImageView();
-		imageDiceFirst.setFitWidth(80);
-		imageDiceFirst.setPreserveRatio(true);
-		imageDiceSecond.setFitWidth(80);
-		imageDiceSecond.setPreserveRatio(true);
+		imageDiceSecond.setFitWidth(120);
+		imageDiceSecond.setFitHeight(120);
+		imageDiceSecond.setLayoutX(175);
+		imageDiceSecond.setLayoutY(85);
 
 		Button lanzarButton = new Button("Lanzar dados");
+		lanzarButton.setLayoutX(119);
+		lanzarButton.setLayoutY(250);
 
 		lanzarButton.setOnAction(e -> {
 			lanzarButton.setDisable(true);
@@ -1094,6 +1164,7 @@ public class GameController {
 			resultadoCallback = resultado -> {
 				int dado1 = resultado.getDado1();
 				int dado2 = resultado.getDado2();
+				int total = dado1 + dado2;
 
 				Player actualPlayer = orderTurn.get(turnIndex);
 
@@ -1108,30 +1179,64 @@ public class GameController {
 					return;
 				}
 
+				moverFichaJugador(actualPlayer, total);
 				ejecutarMovimiento(actualPlayer, dado1, dado2);
 				resultadoCallback = null;
 
-				Button siguienteTurno = new Button("Terminar turno");
-				siguienteTurno.setOnAction(ev -> {
-					turnIndex++;
-					if (turnIndex >= orderTurn.size()) {
-						turnIndex = 0;
-					}
-					startTurn();
-				});
+//				Button siguienteTurno = new Button("Terminar turno");
+//				siguienteTurno.setOnAction(ev -> {
+//					turnIndex++;
+//					if (turnIndex >= orderTurn.size()) {
+//						turnIndex = 0;
+//					}
+//					startTurn();
+//				});
 
-				Platform.runLater(() -> {
-					vbox.getChildren().add(siguienteTurno);
-				});
+//				Platform.runLater(() -> {
+//					centerPane.getChildren().add(siguienteTurno);
+//				});
 			};
 
 			rollDice();
 		});
-
-		vbox.getChildren().addAll(imageDiceFirst, imageDiceSecond, lanzarButton);
-
 		centerPane.getChildren().clear();
-		centerPane.getChildren().add(vbox);
+		centerPane.getChildren().addAll(imageDiceFirst, imageDiceSecond, lanzarButton);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void moverFichaJugador(Player actualPlayer, int total) {
+		ImageView imgFicha = new ImageView(new Image(actualPlayer.getToken()));
+		Cell actualCell = actualPlayer.getCell();
+		int actualCellNumber = actualCell.getIdCell();
+		int nextCellNumber = (actualCellNumber + total) % TOTAL_NUM_CELLS;
+		Cell newCell = cellDAO.findCellById(nextCellNumber);
+
+		Point2D coordenadas = null;
+		for (Map.Entry<Point2D, Cell> entry : mapaCeldaPorCoordenada.entrySet()) {
+			if (entry.getValue().equals(newCell)) {
+				coordenadas = entry.getKey();
+				break;
+			}
+		}
+
+		if (coordenadas != null) {
+			int fila = (int) coordenadas.getX();
+			int columna = (int) coordenadas.getY();
+			board_game.getChildren().remove(imgFicha);
+			board_game.add(imgFicha, columna, fila);
+		}
+
+	}
+
+	private void mostrarMensajeJuegoTerminado() {
+		Label lblInfo = new Label();
+		lblInfo.setText("El juego ha terminado");
+		lblInfo.setLayoutX(28);
+		lblInfo.setLayoutY(102);
+		lblInfo.setMaxWidth(273);
+		lblInfo.setWrapText(true);
 	}
 
 	/**
@@ -1140,7 +1245,7 @@ public class GameController {
 	public void ejecutarMovimiento(Player actualPlayer, int dado1, int dado2) {
 		if (isGameFinished()) {
 			System.out.println("El juego ha terminado. No se puede ejecutar el movimiento.");
-			// mostrarMensajeJuegoTerminado();
+			mostrarMensajeJuegoTerminado();
 		}
 
 		actualizarResaltadoJugador(actualPlayer);
@@ -1169,12 +1274,11 @@ public class GameController {
 			// Si el jugador no está en la cárcel, lanza el dado
 			System.out.println(
 					"El jugador " + actualPlayer.getProfile().getNickname() + " ha sacado " + dado1 + " y " + dado2);
-			// TODO mirar lo del doble, porque no tiene sentido
 			if (dado1 == dado2) {
 				// Si el jugador ha sacado dobles, lanza el dado de nuevo
 				System.out.println("El jugador " + actualPlayer.getProfile().getNickname()
 						+ " ha sacado dobles y lanza de nuevo.");
-				// rollDice();
+				mostrarPanelTurnoJugador(actualPlayer.getProfile());
 			}
 			// Avanzamos la ficha
 			Cell actualCell = actualPlayer.getCell();
