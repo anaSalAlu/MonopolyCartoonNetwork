@@ -43,33 +43,29 @@ import javafx.scene.layout.BackgroundRepeat;
 import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import models.Action;
-import models.Board;
 import models.Card;
 import models.Card.CardType;
 import models.Cell;
 import models.Game;
 import models.Game.State;
 import models.Player;
+import models.PlayerCard;
 import models.PlayerProperty;
 import models.Profile;
 import models.Property;
 import models.RentHouseValue;
-import models.TiradaJugador;
 import models.TiradaResultado;
 
 public class GameController {
-
-	// TODO implementar el que se muevan las fichas
-	// TODO mirar el dado doble
-	// TODO ordenar todo
-	// TODO hacer que se vea el tablero y el panel del centro bien
-	// TODO si da tiempo cambiar las variables a ingles
 
 	public static final String[] TOKENS_IMAGES = { "/images/tokens/gema.png", "/images/tokens/mascara.png",
 			"/images/tokens/pankake.png", "/images/tokens/probeta.png", "/images/tokens/rinyonera.png",
@@ -101,8 +97,6 @@ public class GameController {
 	@FXML
 	private Label lblAction;
 
-	// DICE
-
 	@FXML
 	private ImageView imageDiceFirst;
 
@@ -112,35 +106,30 @@ public class GameController {
 	@FXML
 	private Button rollDice;
 
-	// TODO hay que crear un ImageView por cada ficha del jugador o sea se 4
-
 	@FXML
 	private AnchorPane centerPane;
 
 	// Game
 	private Game actualGame;
 	private Boolean isFinished = false;
-	private Board board;
 	private int dice1;
 	private int dice2;
-	private boolean[] isDouble;
 	private Player actualPlayer;
 	private int currentProfileIndex = 0;
 	private int turnIndex = 0;
 	private boolean faseInicial = true;
 	private List<Player> orderTurn = new ArrayList<Player>();
-	List<Player> allPlayers = new ArrayList<Player>();
+	private List<Player> allPlayers = new ArrayList<Player>();
 	private List<Profile> selectedProfiles = new ArrayList<Profile>();
 	private List<String> selectedTokens = new ArrayList<String>();
-	private List<Card> playerCards = new ArrayList<Card>();
-	private List<Property> playerProperties = new ArrayList<Property>();
 	private List<Cell> cells = new ArrayList<Cell>();
-	private List<TiradaJugador> tiradas = new ArrayList<>();
 	private Map<Profile, Integer> tiradasPorJugador = new HashMap<>();
 	private Consumer<TiradaResultado> resultadoCallback;
 	private List<Label> playerLabels = new ArrayList<>();
 	private List<Point2D> borde = new ArrayList<>();
-	private Map<Point2D, Cell> mapaCeldaPorCoordenada = null;
+	private Map<Point2D, Cell> mapaCeldaPorCoordenada = new HashMap<>();
+	private Map<Point2D, StackPane> stackPanePorCoordenada = new HashMap<>();
+	private Map<Point2D, HBox> hboxPorCoordenada = new HashMap<>();
 
 	// DAOs
 	private DAOManager daoManager = new DAOManager();
@@ -150,6 +139,8 @@ public class GameController {
 	private PlayerDAO playerDAO = daoManager.getPlayerDAO();
 	private PlayerCardDAO playerCardDAO = daoManager.getPlayerCardDAO();
 	private PlayerPropertyDAO playerPropertyDAO = daoManager.getPlayerPropertyDAO();
+
+	/* Setters */
 
 	/**
 	 * @author Ana
@@ -171,6 +162,7 @@ public class GameController {
 		}
 	}
 
+	/* Inits */
 	/**
 	 * @author Ana
 	 */
@@ -195,18 +187,13 @@ public class GameController {
 
 		// Creamos las celdas
 		cells = cellDAO.getAll();
-		System.out.println("Número de celdas cargadas: " + cells.size());
-		for (Cell c : cells) {
-			System.out.println("Celda ID: " + c.getIdCell() + ", tipo: " + c.getType());
-		}
 
 		// Cremos el tablero
-		board = new Board(1, cells);
 		initBoard();
 
 		// Iniciar selección de tokens uno a uno
 		selectedTokens.clear();
-		for (Profile profile : selectedProfiles) {
+		for (int i = 0; i < selectedProfiles.size(); i++) {
 			seleccionarFichaJugador();
 		}
 
@@ -218,28 +205,54 @@ public class GameController {
 
 	}
 
+	/**
+	 * @author Ana
+	 */
 	private void initBoard() {
-		// Fila superior
-		for (int col = 0; col < 11; col++) {
+		// Fila inferior (derecha a izquierda)
+		for (int col = 10; col >= 0; col--) {
+			borde.add(new Point2D(10, col));
+		}
+
+		// Columna izquierda (de abajo hacia arriba, sin esquinas)
+		for (int row = 9; row >= 1; row--) {
+			borde.add(new Point2D(row, 0));
+		}
+
+		// Fila superior (izquierda a derecha)
+		for (int col = 0; col <= 10; col++) {
 			borde.add(new Point2D(0, col));
 		}
-		// Columna derecha (sin esquinas)
-		for (int row = 1; row < 11 - 1; row++) {
-			borde.add(new Point2D(row, 11 - 1));
-		}
-		// Fila inferior
-		for (int col = 11 - 1; col >= 0; col--) {
-			borde.add(new Point2D(11 - 1, col));
-		}
-		// Columna izquierda (sin esquinas)
-		for (int row = 11 - 2; row > 0; row--) {
-			borde.add(new Point2D(row, 0));
+
+		// Columna derecha (de arriba hacia abajo, sin esquinas)
+		for (int row = 1; row <= 9; row++) {
+			borde.add(new Point2D(row, 10));
 		}
 
 		mapaCeldaPorCoordenada = new HashMap<>();
 
 		for (int i = 0; i < borde.size(); i++) {
 			mapaCeldaPorCoordenada.put(borde.get(i), cells.get(i));
+		}
+
+		stackPanePorCoordenada = new HashMap<>();
+		hboxPorCoordenada = new HashMap<>();
+
+		for (Point2D coordenada : borde) {
+			int fila = (int) coordenada.getX();
+			int columna = (int) coordenada.getY();
+
+			StackPane contenedor = new StackPane();
+			contenedor.setPrefSize(60, 60);
+
+			HBox hboxFichas = new HBox(2);
+			hboxFichas.setAlignment(Pos.CENTER);
+			contenedor.getChildren().add(hboxFichas);
+
+			board_game.add(contenedor, columna, fila);
+
+			stackPanePorCoordenada.put(coordenada, contenedor);
+			hboxPorCoordenada.put(coordenada, hboxFichas);
 		}
 	}
 
@@ -285,567 +298,6 @@ public class GameController {
 	/**
 	 * @author Ana
 	 */
-	public boolean isGameFinished() {
-		if (isFinished) {
-			return true;
-		}
-
-		int activePlayers = 0;
-		for (Player player : orderTurn) {
-			if (!player.getIsBankrupt()) {
-				activePlayers++;
-			}
-		}
-
-		return activePlayers <= 1;
-	}
-
-	@FXML
-	public void exitGame() {
-		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-		alert.setTitle("Salir del Juego");
-		alert.setHeaderText("¿Estás seguro que quieres salir?");
-		alert.setContentText("Elige una opción:");
-
-		ButtonType mainMenuButton = new ButtonType("Menu Principal");
-		ButtonType exitAppButton = new ButtonType("Salir", ButtonBar.ButtonData.OK_DONE);
-		ButtonType cancelButton = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-		alert.getButtonTypes().setAll(mainMenuButton, exitAppButton, cancelButton);
-
-		alert.showAndWait().ifPresent(response -> {
-			if (response == mainMenuButton) {
-				try {
-					Stage stage = (Stage) this.exitButton.getScene().getWindow();
-					double currentWidth = stage.getWidth();
-					double currentHeight = stage.getHeight();
-
-					FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
-					Parent root = loader.load();
-
-					Scene scene = new Scene(root, currentWidth, currentHeight);
-					stage.setScene(scene);
-					stage.show();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			} else if (response == exitAppButton) {
-				System.exit(0);
-			}
-		});
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void executeAction(Action action, Player player) {
-		String type = action.getActionType().name();
-		int value = action.getTimes();
-
-		switch (type) {
-		case "PAY":
-			player.setMoney(player.getMoney() - value);
-			break;
-		case "RECIEVE":
-			player.setMoney(player.getMoney() + value);
-			break;
-		case "PAY_PLAYERS":
-			for (Player other : orderTurn) {
-				if (!other.equals(player) && !other.getIsBankrupt()) {
-					player.setMoney(player.getMoney() - value);
-					other.setMoney(other.getMoney() + value);
-				}
-			}
-			break;
-		case "RECIEVE_PLAYERS":
-			for (Player other : orderTurn) {
-				if (!other.equals(player) && !other.getIsBankrupt()) {
-					other.setMoney(other.getMoney() - value);
-					player.setMoney(player.getMoney() + value);
-				}
-			}
-			break;
-		case "EXIT_JAIL":
-			player.setJailTurnsLeft(0);
-			break;
-		case "ROLL_DICE":
-			mostrarPanelTurnoJugador(player.getProfile());
-			break;
-		case "GO_BACK_CELLS":
-			Cell actualCell = actualPlayer.getCell();
-			int actualCellNumber = actualCell.getIdCell();
-			int nextCellNumber = (actualCellNumber - value) % TOTAL_NUM_CELLS;
-			Cell newCell = cellDAO.findCellById(nextCellNumber);
-			player.setCell(newCell);
-			break;
-		case "MOVE_CELLS":
-			actualCell = actualPlayer.getCell();
-			actualCellNumber = actualCell.getIdCell();
-			nextCellNumber = (actualCellNumber + value) % TOTAL_NUM_CELLS;
-			newCell = cellDAO.findCellById(nextCellNumber);
-			player.setCell(newCell);
-			break;
-		case "SUM_DICE":
-			actualCell = actualPlayer.getCell();
-			actualCellNumber = actualCell.getIdCell();
-			nextCellNumber = (actualCellNumber + value) % TOTAL_NUM_CELLS;
-			newCell = cellDAO.findCellById(nextCellNumber);
-			player.setCell(newCell);
-			break;
-		case "GO_EXIT":
-			newCell = cellDAO.findCellById(1);
-			player.setCell(newCell);
-			break;
-		default:
-			System.out.println("Acción desconocida: " + type);
-			break;
-		}
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handlePropertyCell(Cell cell, Player player) {
-		lblAction.setText("Has caído en una celda de propiedad.");
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		lblAction.setWrapText(true);
-
-		System.out.println("Manejando celda de propiedad...");
-		Property property = cell.getProperty();
-		if (property != null) {
-			System.out.println("Partida encontrada: " + actualGame.getIdGame());
-			boolean hasOwner = playerPropertyDAO.isPropertyOwned(property.getIdProperty(), actualGame.getIdGame());
-			int ownerId = playerPropertyDAO.getPropertyOwner(property.getIdProperty(), actualGame.getIdGame());
-			Player owner = playerDAO.findPlayerById(ownerId);
-			System.out.println("Propiedad ID: " + property.getIdProperty() + ", Tiene dueño: " + hasOwner
-					+ ", Dueño ID: " + ownerId);
-			if (!hasOwner) {
-				handleComprarPropiedad(property, player);
-			} else if ((hasOwner && owner != null) && owner.getIdPlayer() != player.getIdPlayer()) {
-				handleCobrarAlquiler(property, owner, player);
-			} else {
-				handleUpdateProperty(property, player);
-			}
-
-		} else {
-			System.out.println("No hay propiedad en esta celda.");
-		}
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleComprarPropiedad(Property property, Player player) {
-		centerPane.getChildren().clear();
-
-		ImageView imgProperty = new ImageView();
-		String resourcePath = MessageFormat.format(PROPERTY_IMAGE, property.getIdProperty());
-		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-		if (resourceUrl != null) {
-			imgProperty.setImage(new Image(resourceUrl.toString()));
-			imgProperty.setFitWidth(170);
-			imgProperty.setFitHeight(235);
-			imgProperty.setLayoutX(80);
-			imgProperty.setLayoutY(27);
-		}
-
-		Button btnBuy = new Button();
-		btnBuy.setText("Comprar propiedad");
-		btnBuy.setLayoutX(34);
-		btnBuy.setLayoutY(283);
-		btnBuy.setOnAction(e -> {
-			comprarPropiedad(property, player);
-		});
-
-		Button btnCancel = new Button();
-		btnCancel.setText("Terminar turno");
-		btnCancel.setLayoutX(175);
-		btnCancel.setLayoutY(283);
-		btnCancel.setOnAction(e -> {
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-
-		centerPane.getChildren().addAll(imgProperty, btnBuy, btnCancel);
-
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleCobrarAlquiler(Property property, Player owner, Player player) {
-		centerPane.getChildren().clear();
-
-		int alquiler = cobrarAlquiler(property, owner, player);
-
-		Label lblInfo = new Label();
-		lblInfo.setText("Tienes que pagarle " + alquiler + " al propietario " + owner.getProfile().getNickname());
-		lblInfo.setLayoutX(69);
-		lblInfo.setLayoutY(48);
-		lblInfo.setMaxWidth(273);
-		lblInfo.setWrapText(true);
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Terminar turno");
-		btnTerminarTurno.setLayoutX(117);
-		btnTerminarTurno.setLayoutY(256);
-		btnTerminarTurno.setOnAction(e -> {
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleUpdateProperty(Property property, Player actualPlayer) {
-		centerPane.getChildren().clear();
-
-		ImageView imgProperty = new ImageView();
-		String resourcePath = MessageFormat.format(PROPERTY_IMAGE, property.getIdProperty());
-		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-		if (resourceUrl != null) {
-			imgProperty.setImage(new Image(resourceUrl.toString()));
-			imgProperty.setFitWidth(170);
-			imgProperty.setFitHeight(235);
-			imgProperty.setLayoutX(20);
-			imgProperty.setLayoutY(26);
-		}
-
-		Label lblEpisodios = new Label();
-		lblEpisodios.setText("Número de episodios:");
-		lblEpisodios.setPrefWidth(117);
-		lblEpisodios.setPrefHeight(17);
-		lblEpisodios.setLayoutX(194);
-		lblEpisodios.setLayoutY(9);
-
-		HBox hbEpisodios = new HBox();
-		hbEpisodios.setSpacing(5);
-		hbEpisodios.setLayoutX(194);
-		hbEpisodios.setLayoutY(27);
-		hbEpisodios.setPrefWidth(122);
-		hbEpisodios.setPrefHeight(31);
-		hbEpisodios.getChildren().clear();
-		for (int i = 0; i < property.getHouseNumber(); i++) {
-			ImageView houseView = new ImageView(new Image("images/episode.png"));
-			houseView.setFitWidth(30);
-			houseView.setFitHeight(30);
-			hbEpisodios.getChildren().add(houseView);
-		}
-
-		Label lblTemporadas = new Label();
-		lblTemporadas.setText("Número de episodios:");
-		lblTemporadas.setPrefWidth(125);
-		lblTemporadas.setPrefHeight(17);
-		lblTemporadas.setLayoutX(194);
-		lblTemporadas.setLayoutY(63);
-
-		HBox hbTemporada = new HBox();
-		hbTemporada.setSpacing(5);
-		hbTemporada.setLayoutX(194);
-		hbTemporada.setLayoutY(81);
-		hbTemporada.setPrefWidth(122);
-		hbTemporada.setPrefHeight(31);
-		hbTemporada.getChildren().clear();
-		for (int i = 0; i < property.getHotelNumber(); i++) {
-			ImageView hotelView = new ImageView(new Image("images/season.png"));
-			hotelView.setFitWidth(24);
-			hotelView.setFitHeight(24);
-			hbTemporada.getChildren().add(hotelView);
-		}
-
-		Button btnComprarCasa = new Button();
-		btnComprarCasa.setText("Comprar episodio");
-		btnComprarCasa.setLayoutX(194);
-		btnComprarCasa.setLayoutY(120);
-		btnComprarCasa.setOnAction(e -> {
-			comprarCasa(property, actualPlayer);
-		});
-
-		Button btnComprarHotel = new Button();
-		btnComprarHotel.setText("Comprar temporada");
-		btnComprarHotel.setLayoutX(194);
-		btnComprarHotel.setLayoutY(197);
-		btnComprarHotel.setOnAction(e -> {
-			comprarHotel(property, actualPlayer);
-		});
-
-		Button btnVenderCasa = new Button();
-		btnVenderCasa.setText("Vender episodio");
-		btnVenderCasa.setLayoutX(194);
-		btnVenderCasa.setLayoutY(158);
-		btnVenderCasa.setOnAction(e -> {
-			venderCasa(property, actualPlayer);
-		});
-
-		Button btnVenderHotel = new Button();
-		btnVenderHotel.setText("Vender temporada");
-		btnVenderHotel.setLayoutX(194);
-		btnVenderHotel.setLayoutY(236);
-		btnVenderHotel.setOnAction(e -> {
-			venderHotel(property, actualPlayer);
-		});
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Terminar turno");
-		btnTerminarTurno.setLayoutX(117);
-		btnTerminarTurno.setLayoutY(283);
-		btnTerminarTurno.setOnAction(e -> {
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-		centerPane.getChildren().addAll(imgProperty, lblEpisodios, hbEpisodios, lblTemporadas, hbTemporada,
-				btnComprarCasa, btnComprarHotel, btnVenderCasa, btnVenderHotel, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleJailCell(Player player) {
-		lblAction.setText("Has caído en una celda de cárcel.");
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		lblAction.setWrapText(true);
-
-		System.out.println("Manejando celda de cárcel...");
-		player.setJailTurnsLeft(3);
-
-		centerPane.getChildren().clear();
-
-		Label lblInfo = new Label();
-		lblInfo.setText("¡Oh no, has caído en la cárcel!");
-		lblInfo.setLayoutX(85);
-		lblInfo.setLayoutY(49);
-
-		ImageView imgCarcel = new ImageView();
-		imgCarcel.setImage(new Image("/images/cells/jail.jpg"));
-		imgCarcel.setFitWidth(110);
-		imgCarcel.setFitHeight(110);
-		imgCarcel.setLayoutX(106);
-		imgCarcel.setLayoutY(107);
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Terminar turno");
-		btnTerminarTurno.setLayoutX(117);
-		btnTerminarTurno.setLayoutY(256);
-		btnTerminarTurno.setOnAction(e -> {
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-
-		centerPane.getChildren().addAll(lblInfo, imgCarcel, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleLuckCell(Cell cell, Player player) {
-		lblAction.setText("Has caído en una celda de carta de suerte.");
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		lblAction.setWrapText(true);
-
-		System.out.println("Manejando celda de suerte...");
-		Card luckyCard = getRandomCard(CardType.LUCK);
-		System.out.println("Carta de suerte obtenida: " + luckyCard.getIdCard());
-		List<Card> cards = player.getCards();
-		cards.add(luckyCard);
-		player.setCards(cards);
-
-		centerPane.getChildren().clear();
-
-		ImageView imgLuck = new ImageView();
-		String resourcePath = MessageFormat.format(LUCK_IMAGE, luckyCard.getIdCard());
-		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-		System.out.println("Buscando recurso en: " + resourcePath);
-		System.out.println("URL recurso: " + resourceUrl);
-		if (resourceUrl != null) {
-			imgLuck.setImage(new Image(resourceUrl.toString()));
-			imgLuck.setFitWidth(238);
-			imgLuck.setFitHeight(159);
-			imgLuck.setLayoutX(47);
-			imgLuck.setLayoutY(52);
-		}
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Ejecutar acción y terminar turno");
-		btnTerminarTurno.setLayoutX(73);
-		btnTerminarTurno.setLayoutY(253);
-		btnTerminarTurno.setOnAction(e -> {
-			executeAction(luckyCard.getAction(), player);
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-
-		centerPane.getChildren().addAll(imgLuck, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleCommunityChestCell(Cell cell, Player player) {
-		lblAction.setText("Has caído en una celda de cofre de comunidad.");
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		lblAction.setWrapText(true);
-
-		System.out.println("Manejando celda de cofre comunitario...");
-		Card chestCard = getRandomCard(CardType.LUCK);
-		System.out.println("Carta de cofre obtenida: " + chestCard.getIdCard());
-		List<Card> cards = player.getCards();
-		cards.add(chestCard);
-		player.setCards(cards);
-
-		centerPane.getChildren().clear();
-
-		ImageView imgChest = new ImageView();
-		String resourcePath = MessageFormat.format(CHEST_IMAGE, chestCard.getIdCard());
-		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-		if (resourceUrl != null) {
-			imgChest.setImage(new Image(resourceUrl.toString()));
-			imgChest.setFitWidth(238);
-			imgChest.setFitHeight(159);
-			imgChest.setLayoutX(47);
-			imgChest.setLayoutY(52);
-		}
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Ejecutar acción y terminar turno");
-		btnTerminarTurno.setLayoutX(73);
-		btnTerminarTurno.setLayoutY(253);
-		btnTerminarTurno.setOnAction(e -> {
-			executeAction(chestCard.getAction(), player);
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-
-		centerPane.getChildren().addAll(imgChest, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleStartCell(Cell cell, Player player) {
-		lblAction.setText("Has caído en la celda de salida.");
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		lblAction.setWrapText(true);
-
-		System.out.println("Manejando celda de salida...");
-		int startMoney = 200;
-		int actualMoney = player.getMoney();
-		int addedMoney = actualMoney + startMoney;
-		player.setMoney(addedMoney);
-
-		centerPane.getChildren().clear();
-
-		Label lblInfo = new Label();
-		lblInfo.setText("Has pasado por la salida y has recibido " + startMoney + " dólares.");
-		lblInfo.setLayoutX(28);
-		lblInfo.setLayoutY(102);
-		lblInfo.setMaxWidth(273);
-		lblInfo.setWrapText(true);
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Terminar turno");
-		btnTerminarTurno.setLayoutX(117);
-		btnTerminarTurno.setLayoutY(256);
-		btnTerminarTurno.setOnAction(e -> {
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-
-		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public void handleTaxCell(Cell cell, Player player) {
-		lblAction.setText("Has caído en una celda de impuestos.");
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Double.MAX_VALUE / 5);
-		lblAction.setWrapText(true);
-
-		System.out.println("Manejando celda de impuestos...");
-		int taxAmount = 200;
-		int actualMoney = player.getMoney();
-		if (checkIfPlayerCanPurchase(actualMoney, taxAmount)) {
-			int substractedMoney = actualMoney - taxAmount;
-			player.setMoney(substractedMoney);
-		} else {
-			player.setBankrupt(true);
-		}
-
-		centerPane.getChildren().clear();
-
-		Label lblInfo = new Label();
-		lblInfo.setText("Has caído en la celda de impuestos y has pagado " + taxAmount
-				+ " dólares para poder hacer el rodaje de tu serie favorita.");
-		lblInfo.setLayoutX(28);
-		lblInfo.setLayoutY(102);
-		lblInfo.setMaxWidth(273);
-		lblInfo.setWrapText(true);
-
-		Button btnTerminarTurno = new Button();
-		btnTerminarTurno.setText("Terminar turno");
-		btnTerminarTurno.setLayoutX(117);
-		btnTerminarTurno.setLayoutY(256);
-		btnTerminarTurno.setOnAction(e -> {
-			turnIndex++;
-			if (turnIndex >= orderTurn.size()) {
-				turnIndex = 0;
-			}
-			startTurn();
-		});
-
-		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
-	}
-
-	/**
-	 * @author Ana
-	 */
-	public Card getRandomCard(CardType cardType) {
-		Card card = new Card();
-		if (cardType == CardType.LUCK) {
-			int randomId = (int) (Math.random() * (NUM_CARD_FINISH_LUCK - NUM_CARD_INIT_LUCK + 1)) + NUM_CARD_INIT_LUCK;
-			System.out.println("Random ID for luck card: " + randomId);
-			card = cardDAO.findCardById(randomId);
-		} else if (cardType == CardType.COMMUNITY_CHEST) {
-			int randomId = (int) (Math.random() * (NUM_CARD_FINISH_CHEST - NUM_CARD_INIT_CHEST + 1))
-					+ NUM_CARD_INIT_CHEST;
-			System.out.println("Random ID for chest card: " + randomId);
-			card = cardDAO.findCardById(randomId);
-		}
-		return card;
-	}
-
-	/**
-	 * @author Ana
-	 */
 	private void seleccionarFichaJugador() {
 		lblAction.setText(
 				"Selecciona una ficha para el jugador: " + selectedProfiles.get(currentProfileIndex).getNickname());
@@ -856,6 +308,11 @@ public class GameController {
 		ScrollPane scrollPane = new ScrollPane();
 		scrollPane.setFitToWidth(true);
 		scrollPane.setFitToHeight(true);
+		scrollPane.setLayoutX(51);
+		scrollPane.setLayoutY(51);
+		scrollPane.setPrefWidth(275);
+		scrollPane.setPrefHeight(275);
+
 		TilePane tilePane = new TilePane();
 		tilePane.setPrefColumns(4);
 		tilePane.setPrefRows(2);
@@ -891,67 +348,51 @@ public class GameController {
 	/**
 	 * @author Ana
 	 */
-	private void mostrarPanelOrdenDeTurno() {
-		lblAction.setText("Lanza los dados para determinar el orden de turno. Jugador actual: "
-				+ selectedProfiles.get(0).getNickname());
-		lblAction.setPrefWidth(169);
-		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		lblAction.setWrapText(true);
+	private void iniciarFichasJugadores() {
+		Cell celdaSalida = cellDAO.findCellById(1);
+		System.out.println("Celda de salida: " + celdaSalida.getIdCell());
+		Point2D coordenadas = null;
 
-		VBox vbox = new VBox(20);
-		vbox.setAlignment(Pos.CENTER);
+		for (Map.Entry<Point2D, Cell> entry : mapaCeldaPorCoordenada.entrySet()) {
+			if (entry.getValue().getIdCell() == celdaSalida.getIdCell()) {
+				coordenadas = entry.getKey();
+				System.out.println("Coordenadas de la celda de salida: " + coordenadas);
+				break;
+			}
+		}
 
-		// Jugador actual
-		lblPlayerName.setText(selectedProfiles.get(0).getNickname());
-		// lblPlayerName.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-		imgPlayerPhoto.setImage(new Image(selectedProfiles.get(0).getImage()));
-		imgPlayerPhoto.setFitWidth(55);
-		imgPlayerPhoto.setFitHeight(55);
+		if (coordenadas != null) {
+			HBox hboxFichas = hboxPorCoordenada.get(coordenadas);
 
-		imageDiceFirst = new ImageView();
-		imageDiceFirst.setFitWidth(120);
-		imageDiceFirst.setFitHeight(120);
-		imageDiceFirst.setLayoutX(36);
-		imageDiceFirst.setLayoutY(85);
+			for (Player player : orderTurn) {
+				ImageView ficha = player.getImgToken();
 
-		imageDiceSecond = new ImageView();
-		imageDiceSecond.setFitWidth(120);
-		imageDiceSecond.setFitHeight(120);
-		imageDiceSecond.setLayoutX(175);
-		imageDiceSecond.setLayoutY(85);
-
-		Button lanzarButton = new Button("Lanzar dados");
-		lanzarButton.setLayoutX(119);
-		lanzarButton.setLayoutY(250);
-		currentProfileIndex = 0;
-		lanzarButton.setOnAction(e -> {
-			lanzarButton.setDisable(true);
-
-			// Obtener jugador actual
-			Profile jugador = selectedProfiles.get(currentProfileIndex);
-
-			// Definir el callback para cuando termine de lanzar
-			resultadoCallback = resultado -> {
-				int total = resultado.getDado1() + resultado.getDado2();
-
-				if (faseInicial) {
-					tiradasPorJugador.put(jugador, total);
-					currentProfileIndex++;
-					Platform.runLater(() -> {
-						avanzarTurnoLanzamiento();
-						lanzarButton.setDisable(false);
-					});
+				Parent anterior = ficha.getParent();
+				if (anterior instanceof Pane) {
+					((Pane) anterior).getChildren().remove(ficha);
 				}
-			};
 
-			// Iniciar tirada
-			rollDice();
-		});
+				hboxFichas.getChildren().add(ficha);
+			}
+		}
+	}
 
-		centerPane.getChildren().clear();
-		centerPane.getChildren().addAll(imageDiceFirst, imageDiceSecond, lanzarButton);
+	/* Juego */
+	/**
+	 * @author Ana
+	 */
+	public void startGame() {
+		turnIndex = 0;
+		iniciarFichasJugadores();
+		startTurn();
+	}
 
-		avanzarTurnoLanzamiento();
+	/**
+	 * @author Ana
+	 */
+	private void startTurn() {
+		Player currentPlayer = orderTurn.get(turnIndex);
+		mostrarPanelTurnoJugador(currentPlayer.getProfile());
 	}
 
 	/**
@@ -998,7 +439,8 @@ public class GameController {
 			String labelText = String.format("Turno %d: %s - %d$", i + 1, player.getProfile().getNickname(),
 					player.getMoney());
 			Label label = new Label(labelText);
-			label.setStyle("-fx-font-size: 14px; -fx-padding: 5 0 5 0;"); // Estilo opcional
+			label.setStyle("-fx-font-size: 14px; -fx-padding: 5 0 5 0;");
+			label.setFont(Font.font("Comic Sans MS", 14));
 			playerOrderContainer.getChildren().add(label);
 			playerLabels.add(label);
 		}
@@ -1011,7 +453,6 @@ public class GameController {
 	/**
 	 * @author Ana
 	 */
-	@FXML
 	public void rollDice() {
 		Random random = new Random();
 		Thread thread = new Thread() {
@@ -1074,42 +515,121 @@ public class GameController {
 	/**
 	 * @author Ana
 	 */
-	public void startGame() {
-		turnIndex = 0;
-		startTurn();
+	public boolean isGameFinished() {
+		if (isFinished) {
+			return true;
+		}
+
+		int activePlayers = 0;
+		for (Player player : orderTurn) {
+			if (!player.getIsBankrupt()) {
+				activePlayers++;
+			}
+		}
+
+		return activePlayers <= 1;
 	}
 
+	@FXML
+	public void exitGame() {
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Salir del Juego");
+		alert.setHeaderText("¿Estás seguro que quieres salir?");
+		alert.setContentText("Elige una opción:");
+
+		ButtonType mainMenuButton = new ButtonType("Menu Principal");
+		ButtonType exitAppButton = new ButtonType("Salir", ButtonBar.ButtonData.OK_DONE);
+		ButtonType cancelButton = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+		alert.getButtonTypes().setAll(mainMenuButton, exitAppButton, cancelButton);
+
+		alert.showAndWait().ifPresent(response -> {
+			if (response == mainMenuButton) {
+				try {
+					Stage stage = (Stage) this.exitButton.getScene().getWindow();
+					double currentWidth = stage.getWidth();
+					double currentHeight = stage.getHeight();
+
+					FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
+					Parent root = loader.load();
+
+					Scene scene = new Scene(root, currentWidth, currentHeight);
+					stage.setScene(scene);
+					stage.show();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else if (response == exitAppButton) {
+				System.exit(0);
+			}
+		});
+	}
+
+	/* Turnos */
 	/**
 	 * @author Ana
 	 */
-	private void startTurn() {
-		Player currentPlayer = orderTurn.get(turnIndex);
-		iniciarFichasJugadores();
-		mostrarPanelTurnoJugador(currentPlayer.getProfile());
-	}
+	private void mostrarPanelOrdenDeTurno() {
+		lblAction.setText("Lanza los dados para determinar el orden de turno. Jugador actual: "
+				+ selectedProfiles.get(0).getNickname());
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
 
-	private void iniciarFichasJugadores() {
-		Cell celdaSalida = cellDAO.findCellById(1);
-		Point2D coordenadas = null;
-		for (Map.Entry<Point2D, Cell> entry : mapaCeldaPorCoordenada.entrySet()) {
-			if (entry.getValue().equals(celdaSalida)) {
-				coordenadas = entry.getKey();
-				break;
-			}
-		}
+		VBox vbox = new VBox(20);
+		vbox.setAlignment(Pos.CENTER);
 
-		if (coordenadas != null) {
-			int fila = (int) coordenadas.getX();
-			int columna = (int) coordenadas.getY();
+		// Jugador actual
+		lblPlayerName.setText(selectedProfiles.get(0).getNickname());
+		imgPlayerPhoto.setImage(new Image(selectedProfiles.get(0).getImage()));
+		imgPlayerPhoto.setFitWidth(55);
+		imgPlayerPhoto.setFitHeight(55);
 
-			for (Player player : orderTurn) {
-				ImageView ficha = player.getImgToken();
-				if (board_game.getChildren().contains(ficha)) {
-					board_game.getChildren().remove(ficha);
+		imageDiceFirst = new ImageView();
+		imageDiceFirst.setFitWidth(120);
+		imageDiceFirst.setFitHeight(120);
+		imageDiceFirst.setLayoutX(36);
+		imageDiceFirst.setLayoutY(85);
+
+		imageDiceSecond = new ImageView();
+		imageDiceSecond.setFitWidth(120);
+		imageDiceSecond.setFitHeight(120);
+		imageDiceSecond.setLayoutX(212);
+		imageDiceSecond.setLayoutY(85);
+
+		Button lanzarButton = new Button("Lanzar dados");
+		lanzarButton.setFont(Font.font("Comic Sans MS", 14));
+		lanzarButton.setLayoutX(129);
+		lanzarButton.setLayoutY(256);
+		currentProfileIndex = 0;
+		lanzarButton.setOnAction(e -> {
+			lanzarButton.setDisable(true);
+
+			// Obtener jugador actual
+			Profile jugador = selectedProfiles.get(currentProfileIndex);
+
+			// Definir el callback para cuando termine de lanzar
+			resultadoCallback = resultado -> {
+				int total = resultado.getDado1() + resultado.getDado2();
+
+				if (faseInicial) {
+					tiradasPorJugador.put(jugador, total);
+					currentProfileIndex++;
+					Platform.runLater(() -> {
+						avanzarTurnoLanzamiento();
+						lanzarButton.setDisable(false);
+					});
 				}
-				board_game.add(ficha, columna, fila);
-			}
-		}
+			};
+
+			// Iniciar tirada
+			rollDice();
+		});
+
+		centerPane.getChildren().clear();
+		centerPane.getChildren().addAll(imageDiceFirst, imageDiceSecond, lanzarButton);
+
+		avanzarTurnoLanzamiento();
 	}
 
 	/**
@@ -1119,6 +639,7 @@ public class GameController {
 		for (int i = 0; i < orderTurn.size(); i++) {
 			Player player = orderTurn.get(i);
 			Label label = playerLabels.get(i);
+			label.setFont(Font.font("Comic Sans MS", 14));
 			if (player.equals(actualPlayer)) {
 				label.setStyle(
 						"-fx-font-size: 14px; -fx-font-weight: bold; -fx-background-color: #d0f0c0; -fx-padding: 5 0 5 0;");
@@ -1151,13 +672,13 @@ public class GameController {
 		imageDiceSecond = new ImageView();
 		imageDiceSecond.setFitWidth(120);
 		imageDiceSecond.setFitHeight(120);
-		imageDiceSecond.setLayoutX(175);
+		imageDiceSecond.setLayoutX(212);
 		imageDiceSecond.setLayoutY(85);
 
 		Button lanzarButton = new Button("Lanzar dados");
-		lanzarButton.setLayoutX(119);
-		lanzarButton.setLayoutY(250);
-
+		lanzarButton.setFont(Font.font("Comic Sans MS", 14));
+		lanzarButton.setLayoutX(129);
+		lanzarButton.setLayoutY(256);
 		lanzarButton.setOnAction(e -> {
 			lanzarButton.setDisable(true);
 
@@ -1182,19 +703,6 @@ public class GameController {
 				moverFichaJugador(actualPlayer, total);
 				ejecutarMovimiento(actualPlayer, dado1, dado2);
 				resultadoCallback = null;
-
-//				Button siguienteTurno = new Button("Terminar turno");
-//				siguienteTurno.setOnAction(ev -> {
-//					turnIndex++;
-//					if (turnIndex >= orderTurn.size()) {
-//						turnIndex = 0;
-//					}
-//					startTurn();
-//				});
-
-//				Platform.runLater(() -> {
-//					centerPane.getChildren().add(siguienteTurno);
-//				});
 			};
 
 			rollDice();
@@ -1206,30 +714,6 @@ public class GameController {
 	/**
 	 * @author Ana
 	 */
-	public void moverFichaJugador(Player actualPlayer, int total) {
-		ImageView imgFicha = new ImageView(new Image(actualPlayer.getToken()));
-		Cell actualCell = actualPlayer.getCell();
-		int actualCellNumber = actualCell.getIdCell();
-		int nextCellNumber = (actualCellNumber + total) % TOTAL_NUM_CELLS;
-		Cell newCell = cellDAO.findCellById(nextCellNumber);
-
-		Point2D coordenadas = null;
-		for (Map.Entry<Point2D, Cell> entry : mapaCeldaPorCoordenada.entrySet()) {
-			if (entry.getValue().equals(newCell)) {
-				coordenadas = entry.getKey();
-				break;
-			}
-		}
-
-		if (coordenadas != null) {
-			int fila = (int) coordenadas.getX();
-			int columna = (int) coordenadas.getY();
-			board_game.getChildren().remove(imgFicha);
-			board_game.add(imgFicha, columna, fila);
-		}
-
-	}
-
 	private void mostrarMensajeJuegoTerminado() {
 		Label lblInfo = new Label();
 		lblInfo.setText("El juego ha terminado");
@@ -1237,6 +721,39 @@ public class GameController {
 		lblInfo.setLayoutY(102);
 		lblInfo.setMaxWidth(273);
 		lblInfo.setWrapText(true);
+		lblInfo.setFont(Font.font("Comic Sans MS", 14));
+	}
+
+	/* Movimiento */
+	/**
+	 * @author Ana
+	 */
+	public void moverFichaJugador(Player actualPlayer, int total) {
+		ImageView imgFicha = actualPlayer.getImgToken();
+		Cell actualCell = actualPlayer.getCell();
+		int actualCellNumber = actualCell.getIdCell();
+		int nextCellNumber = (actualCellNumber + total) % TOTAL_NUM_CELLS;
+		Cell newCell = cellDAO.findCellById(nextCellNumber);
+		actualPlayer.setCell(newCell); // MUY IMPORTANTE: actualizar la celda del jugador
+
+		Point2D coordenadas = null;
+		for (Map.Entry<Point2D, Cell> entry : mapaCeldaPorCoordenada.entrySet()) {
+			if (entry.getValue().getIdCell() == newCell.getIdCell()) {
+				coordenadas = entry.getKey();
+				break;
+			}
+		}
+
+		if (coordenadas != null) {
+			HBox hboxDestino = hboxPorCoordenada.get(coordenadas);
+
+			Parent padre = imgFicha.getParent();
+			if (padre instanceof Pane) {
+				((Pane) padre).getChildren().remove(imgFicha);
+			}
+
+			hboxDestino.getChildren().add(imgFicha);
+		}
 	}
 
 	/**
@@ -1314,7 +831,7 @@ public class GameController {
 			// mirar si el jugador ha ganado o no
 			if (isGameFinished()) {
 				System.out.println("El juego ha terminado. No se puede continuar el turno.");
-				// mostrarMensajeJuegoTerminado();
+				mostrarMensajeJuegoTerminado();
 				return;
 			}
 
@@ -1325,7 +842,231 @@ public class GameController {
 		}
 	}
 
-	// --- FUNCIONALIDADES DE JUEGO ---
+	/* Propiedades */
+	/**
+	 * @author Ana
+	 */
+	public void handlePropertyCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de propiedad.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de propiedad...");
+		Property property = cell.getProperty();
+		if (property != null) {
+			System.out.println("Partida encontrada: " + actualGame.getIdGame());
+			boolean hasOwner = playerPropertyDAO.isPropertyOwned(property.getIdProperty(), actualGame.getIdGame());
+			int ownerId = playerPropertyDAO.getPropertyOwner(property.getIdProperty(), actualGame.getIdGame());
+			Player owner = playerDAO.findPlayerById(ownerId);
+			System.out.println("Propiedad ID: " + property.getIdProperty() + ", Tiene dueño: " + hasOwner
+					+ ", Dueño ID: " + ownerId);
+			if (!hasOwner) {
+				handleComprarPropiedad(property, player);
+			} else if ((hasOwner && owner != null) && owner.getIdPlayer() != player.getIdPlayer()) {
+				handleCobrarAlquiler(property, owner, player);
+			} else {
+				handleUpdateProperty(property, player);
+			}
+
+		} else {
+			System.out.println("No hay propiedad en esta celda.");
+		}
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleComprarPropiedad(Property property, Player player) {
+		centerPane.getChildren().clear();
+
+		ImageView imgProperty = new ImageView();
+		String resourcePath = MessageFormat.format(PROPERTY_IMAGE, property.getIdProperty());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		if (resourceUrl != null) {
+			imgProperty.setImage(new Image(resourceUrl.toString()));
+			imgProperty.setFitWidth(221);
+			imgProperty.setFitHeight(269);
+			imgProperty.setLayoutX(78);
+			imgProperty.setLayoutY(27);
+		}
+
+		Button btnBuy = new Button();
+		btnBuy.setText("Comprar propiedad");
+		btnBuy.setFont(Font.font("Comic Sans MS", 14));
+		btnBuy.setLayoutX(34);
+		btnBuy.setLayoutY(320);
+		btnBuy.setOnAction(e -> {
+			comprarPropiedad(property, player);
+		});
+
+		Button btnCancel = new Button();
+		btnCancel.setText("Terminar turno");
+		btnCancel.setFont(Font.font("Comic Sans MS", 14));
+		btnCancel.setLayoutX(210);
+		btnCancel.setLayoutY(320);
+		btnCancel.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(imgProperty, btnBuy, btnCancel);
+
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleCobrarAlquiler(Property property, Player owner, Player player) {
+		centerPane.getChildren().clear();
+
+		int alquiler = cobrarAlquiler(property, owner, player);
+
+		Label lblInfo = new Label();
+		lblInfo.setText("Tienes que pagarle " + alquiler + " al propietario " + owner.getProfile().getNickname());
+		lblInfo.setLayoutX(35);
+		lblInfo.setLayoutY(63);
+		lblInfo.setMaxWidth(317);
+		lblInfo.setWrapText(true);
+		lblInfo.setFont(Font.font("Comic Sans MS", 14));
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {
+			double anchoBoton = newVal.getWidth();
+			double altoBoton = newVal.getHeight();
+
+			btnTerminarTurno.setLayoutX((centerPane.getWidth() - anchoBoton) / 2);
+			btnTerminarTurno.setLayoutY((centerPane.getHeight() - altoBoton) / 2);
+		});
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleUpdateProperty(Property property, Player actualPlayer) {
+		centerPane.getChildren().clear();
+
+		ImageView imgProperty = new ImageView();
+		String resourcePath = MessageFormat.format(PROPERTY_IMAGE, property.getIdProperty());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		if (resourceUrl != null) {
+			imgProperty.setImage(new Image(resourceUrl.toString()));
+			imgProperty.setFitWidth(190);
+			imgProperty.setFitHeight(270);
+			imgProperty.setLayoutX(14);
+			imgProperty.setLayoutY(18);
+		}
+
+		Label lblEpisodios = new Label();
+		lblEpisodios.setText("Número de episodios:");
+		lblEpisodios.setPrefWidth(117);
+		lblEpisodios.setPrefHeight(17);
+		lblEpisodios.setLayoutX(216);
+		lblEpisodios.setLayoutY(6);
+		lblEpisodios.setFont(Font.font("Comic Sans MS", 14));
+
+		HBox hbEpisodios = new HBox();
+		hbEpisodios.setSpacing(5);
+		hbEpisodios.setLayoutX(216);
+		hbEpisodios.setLayoutY(29);
+		hbEpisodios.setPrefWidth(122);
+		hbEpisodios.setPrefHeight(31);
+		hbEpisodios.getChildren().clear();
+		for (int i = 0; i < property.getHouseNumber(); i++) {
+			ImageView houseView = new ImageView(new Image("images/episode.png"));
+			houseView.setFitWidth(30);
+			houseView.setFitHeight(30);
+			hbEpisodios.getChildren().add(houseView);
+		}
+
+		Label lblTemporadas = new Label();
+		lblTemporadas.setText("Número de episodios:");
+		lblTemporadas.setPrefWidth(125);
+		lblTemporadas.setPrefHeight(17);
+		lblTemporadas.setLayoutX(216);
+		lblTemporadas.setLayoutY(65);
+		lblTemporadas.setFont(Font.font("Comic Sans MS", 14));
+
+		HBox hbTemporada = new HBox();
+		hbTemporada.setSpacing(5);
+		hbTemporada.setLayoutX(216);
+		hbTemporada.setLayoutY(90);
+		hbTemporada.setPrefWidth(122);
+		hbTemporada.setPrefHeight(31);
+		hbTemporada.getChildren().clear();
+		for (int i = 0; i < property.getHotelNumber(); i++) {
+			ImageView hotelView = new ImageView(new Image("images/season.png"));
+			hotelView.setFitWidth(24);
+			hotelView.setFitHeight(24);
+			hbTemporada.getChildren().add(hotelView);
+		}
+
+		Button btnComprarCasa = new Button();
+		btnComprarCasa.setText("Comprar episodio");
+		btnComprarCasa.setFont(Font.font("Comic Sans MS", 14));
+		btnComprarCasa.setLayoutX(216);
+		btnComprarCasa.setLayoutY(129);
+		btnComprarCasa.setOnAction(e -> {
+			comprarCasa(property, actualPlayer);
+		});
+
+		Button btnComprarHotel = new Button();
+		btnComprarHotel.setText("Comprar temporada");
+		btnComprarCasa.setFont(Font.font("Comic Sans MS", 14));
+		btnComprarHotel.setLayoutX(216);
+		btnComprarHotel.setLayoutY(215);
+		btnComprarHotel.setOnAction(e -> {
+			comprarHotel(property, actualPlayer);
+		});
+
+		Button btnVenderCasa = new Button();
+		btnVenderCasa.setText("Vender episodio");
+		btnComprarCasa.setFont(Font.font("Comic Sans MS", 14));
+		btnVenderCasa.setLayoutX(216);
+		btnVenderCasa.setLayoutY(171);
+		btnVenderCasa.setOnAction(e -> {
+			venderCasa(property, actualPlayer);
+		});
+
+		Button btnVenderHotel = new Button();
+		btnVenderHotel.setText("Vender temporada");
+		btnComprarCasa.setFont(Font.font("Comic Sans MS", 14));
+		btnVenderHotel.setLayoutX(216);
+		btnVenderHotel.setLayoutY(262);
+		btnVenderHotel.setOnAction(e -> {
+			venderHotel(property, actualPlayer);
+		});
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnComprarCasa.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(315);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+		centerPane.getChildren().addAll(imgProperty, lblEpisodios, hbEpisodios, lblTemporadas, hbTemporada,
+				btnComprarCasa, btnComprarHotel, btnVenderCasa, btnVenderHotel, btnTerminarTurno);
+	}
 
 	/**
 	 * @author Ana
@@ -1477,7 +1218,6 @@ public class GameController {
 	 * 
 	 * @author Ana
 	 */
-	// implementar la venta del hotel
 	public void venderHotel(Property property, Player player) {
 		lblAction.setText("Has caído en una celda de tu propiedad. Puedes vender un hotel si tienes 1 hotel.");
 		lblAction.setPrefWidth(169);
@@ -1560,6 +1300,322 @@ public class GameController {
 		} else {
 			return true;
 		}
+	}
+
+	/* Acciones en celdas */
+	/**
+	 * @author Ana
+	 */
+	public void executeAction(Action action, Player player) {
+		String type = action.getActionType().name();
+		int value = action.getTimes();
+
+		switch (type) {
+		case "PAY":
+			player.setMoney(player.getMoney() - value);
+			break;
+		case "RECIEVE":
+			player.setMoney(player.getMoney() + value);
+			break;
+		case "PAY_PLAYERS":
+			for (Player other : orderTurn) {
+				if (!other.equals(player) && !other.getIsBankrupt()) {
+					player.setMoney(player.getMoney() - value);
+					other.setMoney(other.getMoney() + value);
+				}
+			}
+			break;
+		case "RECIEVE_PLAYERS":
+			for (Player other : orderTurn) {
+				if (!other.equals(player) && !other.getIsBankrupt()) {
+					other.setMoney(other.getMoney() - value);
+					player.setMoney(player.getMoney() + value);
+				}
+			}
+			break;
+		case "EXIT_JAIL":
+			player.setJailTurnsLeft(0);
+			break;
+		case "ROLL_DICE":
+			mostrarPanelTurnoJugador(player.getProfile());
+			break;
+		case "GO_BACK_CELLS":
+			Cell actualCell = actualPlayer.getCell();
+			int actualCellNumber = actualCell.getIdCell();
+			int nextCellNumber = (actualCellNumber - value) % TOTAL_NUM_CELLS;
+			Cell newCell = cellDAO.findCellById(nextCellNumber);
+			player.setCell(newCell);
+			break;
+		case "MOVE_CELLS":
+			actualCell = actualPlayer.getCell();
+			actualCellNumber = actualCell.getIdCell();
+			nextCellNumber = (actualCellNumber + value) % TOTAL_NUM_CELLS;
+			newCell = cellDAO.findCellById(nextCellNumber);
+			player.setCell(newCell);
+			break;
+		case "SUM_DICE":
+			actualCell = actualPlayer.getCell();
+			actualCellNumber = actualCell.getIdCell();
+			nextCellNumber = (actualCellNumber + value) % TOTAL_NUM_CELLS;
+			newCell = cellDAO.findCellById(nextCellNumber);
+			player.setCell(newCell);
+			break;
+		case "GO_EXIT":
+			newCell = cellDAO.findCellById(1);
+			player.setCell(newCell);
+			break;
+		default:
+			System.out.println("Acción desconocida: " + type);
+			break;
+		}
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleJailCell(Player player) {
+		lblAction.setText("Has caído en una celda de cárcel.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de cárcel...");
+		player.setJailTurnsLeft(3);
+
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("¡Oh no, has caído en la cárcel!");
+		lblInfo.setLayoutX(85);
+		lblInfo.setLayoutY(49);
+		lblInfo.setMaxWidth(215);
+		lblInfo.setFont(Font.font("Comic Sans MS", 14));
+
+		ImageView imgCarcel = new ImageView();
+		imgCarcel.setImage(new Image("/images/cells/jail.jpg"));
+		imgCarcel.setFitWidth(110);
+		imgCarcel.setFitHeight(110);
+		imgCarcel.setLayoutX(133);
+		imgCarcel.setLayoutY(107);
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(lblInfo, imgCarcel, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleStartCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en la celda de salida.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de salida...");
+		int startMoney = 200;
+		int actualMoney = player.getMoney();
+		int addedMoney = actualMoney + startMoney;
+		player.setMoney(addedMoney);
+
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("Has pasado por la salida y has recibido " + startMoney + " dólares.");
+		lblInfo.setLayoutX(85);
+		lblInfo.setLayoutY(49);
+		lblInfo.setMaxWidth(215);
+		lblInfo.setWrapText(true);
+		lblInfo.setFont(Font.font("Comic Sans MS", 14));
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleTaxCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de impuestos.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Double.MAX_VALUE / 5);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de impuestos...");
+		int taxAmount = 200;
+		int actualMoney = player.getMoney();
+		if (checkIfPlayerCanPurchase(actualMoney, taxAmount)) {
+			int substractedMoney = actualMoney - taxAmount;
+			player.setMoney(substractedMoney);
+		} else {
+			player.setBankrupt(true);
+		}
+
+		centerPane.getChildren().clear();
+
+		Label lblInfo = new Label();
+		lblInfo.setText("Has caído en la celda de impuestos y has pagado " + taxAmount
+				+ " dólares para poder hacer el rodaje de tu serie favorita.");
+		lblInfo.setLayoutX(35);
+		lblInfo.setLayoutY(63);
+		lblInfo.setMaxWidth(317);
+		lblInfo.setWrapText(true);
+		lblInfo.setFont(Font.font("Comic Sans MS", 12));
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Terminar turno");
+		btnTerminarTurno.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(256);
+
+		btnTerminarTurno.setOnAction(e -> {
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(lblInfo, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleLuckCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de carta de suerte.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de suerte...");
+		Card luckyCard = getRandomCard(CardType.LUCK);
+		System.out.println("Carta de suerte obtenida: " + luckyCard.getIdCard());
+		List<Card> cards = player.getCards();
+		cards.add(luckyCard);
+		player.setCards(cards);
+		playerCardDAO
+				.addPlayerCard(new PlayerCard(player.getIdPlayer(), luckyCard.getIdCard(), actualGame.getIdGame()));
+
+		centerPane.getChildren().clear();
+
+		ImageView imgLuck = new ImageView();
+		String resourcePath = MessageFormat.format(LUCK_IMAGE, luckyCard.getIdCard());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		System.out.println("Buscando recurso en: " + resourcePath);
+		System.out.println("URL recurso: " + resourceUrl);
+		if (resourceUrl != null) {
+			imgLuck.setImage(new Image(resourceUrl.toString()));
+			imgLuck.setFitWidth(311);
+			imgLuck.setFitHeight(207);
+			imgLuck.setLayoutX(33);
+			imgLuck.setLayoutY(29);
+		}
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Ejecutar acción y terminar turno");
+		btnTerminarTurno.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			executeAction(luckyCard.getAction(), player);
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(imgLuck, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public void handleCommunityChestCell(Cell cell, Player player) {
+		lblAction.setText("Has caído en una celda de cofre de comunidad.");
+		lblAction.setPrefWidth(169);
+		lblAction.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lblAction.setWrapText(true);
+
+		System.out.println("Manejando celda de cofre comunitario...");
+		Card chestCard = getRandomCard(CardType.LUCK);
+		System.out.println("Carta de cofre obtenida: " + chestCard.getIdCard());
+		List<Card> cards = player.getCards();
+		cards.add(chestCard);
+		player.setCards(cards);
+		playerCardDAO
+				.addPlayerCard(new PlayerCard(player.getIdPlayer(), chestCard.getIdCard(), actualGame.getIdGame()));
+
+		centerPane.getChildren().clear();
+
+		ImageView imgChest = new ImageView();
+		String resourcePath = MessageFormat.format(CHEST_IMAGE, chestCard.getIdCard());
+		URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
+		if (resourceUrl != null) {
+			imgChest.setImage(new Image(resourceUrl.toString()));
+			imgChest.setFitWidth(311);
+			imgChest.setFitHeight(207);
+			imgChest.setLayoutX(33);
+			imgChest.setLayoutY(29);
+		}
+
+		Button btnTerminarTurno = new Button();
+		btnTerminarTurno.setText("Ejecutar acción y terminar turno");
+		btnTerminarTurno.setFont(Font.font("Comic Sans MS", 14));
+		btnTerminarTurno.setLayoutX(129);
+		btnTerminarTurno.setLayoutY(256);
+		btnTerminarTurno.setOnAction(e -> {
+			executeAction(chestCard.getAction(), player);
+			turnIndex++;
+			if (turnIndex >= orderTurn.size()) {
+				turnIndex = 0;
+			}
+			startTurn();
+		});
+
+		centerPane.getChildren().addAll(imgChest, btnTerminarTurno);
+	}
+
+	/**
+	 * @author Ana
+	 */
+	public Card getRandomCard(CardType cardType) {
+		Card card = new Card();
+		if (cardType == CardType.LUCK) {
+			int randomId = (int) (Math.random() * (NUM_CARD_FINISH_LUCK - NUM_CARD_INIT_LUCK + 1)) + NUM_CARD_INIT_LUCK;
+			System.out.println("Random ID for luck card: " + randomId);
+			card = cardDAO.findCardById(randomId);
+		} else if (cardType == CardType.COMMUNITY_CHEST) {
+			int randomId = (int) (Math.random() * (NUM_CARD_FINISH_CHEST - NUM_CARD_INIT_CHEST + 1))
+					+ NUM_CARD_INIT_CHEST;
+			System.out.println("Random ID for chest card: " + randomId);
+			card = cardDAO.findCardById(randomId);
+		}
+		return card;
 	}
 
 }

@@ -22,6 +22,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import models.Profile;
 
@@ -56,13 +57,8 @@ public class ListProfilesController {
 		this.isNewGame = isNewGame;
 	}
 
-	@FXML
-	private void initialize() {
-
-	}
-
 	public void configureView() {
-		System.out.println("New game: " + isNewGame); // Esto debería imprimir 'true'
+		System.out.println("New game: " + isNewGame);
 
 		// Lógica para configurar la selección
 		if (isNewGame) {
@@ -82,7 +78,7 @@ public class ListProfilesController {
 			{
 				imageView.setFitWidth(80);
 				imageView.setFitHeight(80);
-				label.setStyle("-fx-font-size: 18px;");
+				label.setFont(Font.font("Comic Sans MS", 20));
 				content.setStyle("-fx-padding: 10px;");
 				content.getChildren().addAll(imageView, label);
 			}
@@ -105,8 +101,7 @@ public class ListProfilesController {
 		listProfiles.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
 			if (newValue != null) {
 				if (isNewGame) {
-					// Si el perfil ya está en selectedProfiles, lo eliminamos+
-					System.out.println(selectedProfiles.contains(newValue));
+					// Si el perfil ya está en selectedProfiles, lo eliminamos
 					if (selectedProfiles.contains(newValue)) {
 						selectedProfiles.remove(newValue);
 						// TODO mirar si se puede hacer visual el que se seleccione y deseleccione

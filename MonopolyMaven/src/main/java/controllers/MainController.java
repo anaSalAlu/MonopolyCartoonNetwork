@@ -75,6 +75,9 @@ public class MainController {
 			Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/ListProfilesView.fxml"));
 			Parent root = loader.load();
+			ListProfilesController listController = loader.getController();
+
+			listController.configureView();
 			stage.setScene(new Scene(root));
 			stage.show();
 		} catch (IOException e) {

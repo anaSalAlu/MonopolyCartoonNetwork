@@ -120,13 +120,16 @@ public class ProfileController {
 
 	@FXML
 	void saveProfile(ActionEvent event) {
-		// TODO mirar si funciona el guardar en la base de datos
 		if (selectedProfile != null) {
-			profileDAO.updateProfile(selectedProfile);
+			String nickname = tfNickname.getText();
+			Profile profile = new Profile(nickname, selectedImagePath);
+			profileDAO.updateProfile(profile);
+			System.out.println("Creado perfil" + profile.toString());
 		} else {
 			String nickname = tfNickname.getText();
 			Profile profile = new Profile(nickname, selectedImagePath);
 			profileDAO.addProfile(profile);
+			System.out.println("Creado perfil" + profile.getNickname());
 		}
 
 	}

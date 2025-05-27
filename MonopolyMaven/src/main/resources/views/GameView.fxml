@@ -8,11 +8,12 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<BorderPane xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.GameController">
+<BorderPane xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.GameController">
    <center>
       <AnchorPane minHeight="600.0" minWidth="800.0" prefHeight="700.0" prefWidth="1000.0" styleClass="main-background" stylesheets="@../css/Home.css" BorderPane.alignment="CENTER">
          <children>
@@ -44,19 +45,26 @@
                 <RowConstraints minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <AnchorPane fx:id="centerPane" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: lightblue;" GridPane.columnIndex="2" GridPane.columnSpan="7" GridPane.rowIndex="2" GridPane.rowSpan="7" />
+                  <StackPane prefHeight="150.0" prefWidth="200.0" />
                </children>
             </GridPane>
             <Text fx:id="lblPlayerName" layoutX="500.0" layoutY="656.0" strokeType="OUTSIDE" strokeWidth="0.0" text="P1" textAlignment="CENTER" wrappingWidth="128.7294921875">
                <font>
-                  <Font size="25.0" />
+                  <Font name="Comic Sans MS" size="25.0" />
                </font>
             </Text>
             <ImageView fx:id="imgPlayerPhoto" fitHeight="53.0" fitWidth="53.0" layoutX="431.0" layoutY="621.0" pickOnBounds="true" preserveRatio="true" />
             <Button fx:id="exitButton" layoutX="905.0" layoutY="628.0" mnemonicParsing="false" onAction="#exitGame" styleClass="main-buttons" text="Exit" />
-            <Label layoutX="49.0" layoutY="21.0" text="SIGUIENTE TURNO" />
+            <Label layoutX="49.0" layoutY="21.0" text="SIGUIENTE TURNO">
+               <font>
+                  <Font name="Comic Sans MS" size="14.0" />
+               </font></Label>
             <VBox fx:id="playerOrderContainer" layoutX="10.0" layoutY="37.0" prefHeight="133.0" prefWidth="226.0" />
-            <Label fx:id="lblAction" layoutX="805.0" layoutY="19.0" prefHeight="20.0" prefWidth="169.0" text="Label" />
+            <Label fx:id="lblAction" layoutX="805.0" layoutY="19.0" prefHeight="20.0" prefWidth="169.0" text="Label">
+               <font>
+                  <Font name="Comic Sans MS" size="14.0" />
+               </font></Label>
+            <AnchorPane fx:id="centerPane" layoutX="343.0" layoutY="162.0" prefHeight="376.0" prefWidth="376.0" style="-fx-background-color: lightblue;" />
          </children>
       </AnchorPane>
    </center>

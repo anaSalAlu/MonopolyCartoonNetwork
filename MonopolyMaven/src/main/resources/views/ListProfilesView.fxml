@@ -11,9 +11,9 @@
    <center>
       <AnchorPane maxHeight="600.0" maxWidth="800.0" minHeight="600.0" minWidth="800.0" prefHeight="600.0" prefWidth="800.0" styleClass="main-background" stylesheets="@../css/Home.css" BorderPane.alignment="CENTER">
          <children>
-            <Label layoutX="339.0" layoutY="36.0" prefHeight="53.0" prefWidth="123.0" styleClass="h1" text="Perfiles">
+            <Label layoutX="323.0" layoutY="41.0" prefHeight="53.0" prefWidth="155.0" styleClass="h1" text="Perfiles">
                <font>
-                  <Font size="36.0" />
+                  <Font name="Comic Sans MS" size="36.0" />
                </font>
             </Label>
             <ListView fx:id="listProfiles" layoutX="15.0" layoutY="101.0" prefHeight="430.0" prefWidth="768.0" styleClass="main-background" />

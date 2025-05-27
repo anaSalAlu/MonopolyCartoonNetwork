@@ -16,70 +16,70 @@ public class DAOManager {
 	private static PlayerPropertyDAO playerPropertyDAO;
 	private static RentHouseValueDAO rentHouseValueDAO;
 
-	public static ActionDAO getActionDAO() {
+	public ActionDAO getActionDAO() {
 		if (actionDAO == null) {
 			actionDAO = new ActionDAOSQLITE();
 		}
 		return actionDAO;
 	}
 
-	public static CardDAO getCardDAO() {
+	public CardDAO getCardDAO() {
 		if (cardDAO == null) {
 			cardDAO = new CardDAOSQLITE();
 		}
 		return cardDAO;
 	}
 
-	public static CellDAO getCellDAO() {
+	public CellDAO getCellDAO() {
 		if (cellDAO == null) {
 			cellDAO = new CellDAOSQLITE();
 		}
 		return cellDAO;
 	}
 
-	public static GameDAO getGameDAO() {
+	public GameDAO getGameDAO() {
 		if (gameDAO == null) {
 			gameDAO = new GameDAOSQLITE();
 		}
 		return gameDAO;
 	}
 
-	public static PlayerDAO getPlayerDAO() {
+	public PlayerDAO getPlayerDAO() {
 		if (playerDAO == null) {
 			playerDAO = new PlayerDAOSQLITE();
 		}
 		return playerDAO;
 	}
 
-	public static ProfileDAO getProfileDAO() {
+	public ProfileDAO getProfileDAO() {
 		if (profileDAO == null) {
 			profileDAO = new ProfileDAOSQLITE();
 		}
 		return profileDAO;
 	}
 
-	public static PropertyDAO getPropertyDAO() {
+	public PropertyDAO getPropertyDAO() {
 		if (propertyDAO == null) {
 			propertyDAO = new PropertyDAOSQLITE();
 		}
 		return propertyDAO;
 	}
 
-	public static PlayerCardDAO getPlayerCardDAO() {
+	public PlayerCardDAO getPlayerCardDAO() {
 		if (playerCardDAO == null) {
 			playerCardDAO = new PlayerCardDAOSQLITE();
 		}
 		return playerCardDAO;
 	}
 
-	public static PlayerPropertyDAO getPlayerPropertyDAO() {
+	public PlayerPropertyDAO getPlayerPropertyDAO() {
 		if (playerPropertyDAO == null) {
 			playerPropertyDAO = new PlayerPropertyDAOSQLITE();
 		}
 		return playerPropertyDAO;
 	}
 
-	public static RentHouseValueDAO getRentHouseValueDAO() {
+	public RentHouseValueDAO getRentHouseValueDAO() {
 		if (rentHouseValueDAO == null) {
 			rentHouseValueDAO = new RentHouseValueDAOSQLITE();
 		}
